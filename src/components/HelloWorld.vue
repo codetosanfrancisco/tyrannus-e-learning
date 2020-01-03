@@ -11,6 +11,7 @@
 
 <script>
 import { initializeSession, requestToken } from "@/assets/opentok/index"
+import { checkDbExists } from "@/assets/mongodb/index"
 
 export default {
   name: 'HelloWorld',
@@ -19,17 +20,17 @@ export default {
       subdomain: ""
     }
   },
-  mounted () {
-    window.console.log(initializeSession)
-  },
   props: ['button'],
-  created: function(){
+  created: async function(){
     var full = window.location.host
     this.subdomain = full.split('.')[0]
+    const data = await checkDbExists(this.subdomain);
+    window.console.log("db exist moy",data)
   },
   methods: {
-    requestToken: () => {
-      requestToken()
+    requestToken: async () => {
+      const { sessionId, token } =  (await requestToken()).data;
+      initializeSession(sessionId, token)
     }
   }
 }

@@ -1,4 +1,6 @@
 import { OT, apiKey } from "./constants"
+import publisherOptions from "./publisherOptions";
+import subscriberOptions from "./subscriberOptions";
 
 
 // Handling all of our errors here by alerting them
@@ -9,14 +11,13 @@ const handleError = (error) => {
   }
   
 const initializeSession = (sessionId, token) => {
+
     var session = OT.initSession(apiKey, sessionId);
 
     // Create a publisher
-    var publisher = OT.initPublisher('publisher', {
-        insertMode: 'append',
-        width: '100%',
-        height: '100%'
-    }, handleError);
+    var publisher = OT.initPublisher('publisher', publisherOptions, handleError);
+
+    publisher.setStyle({buttonDisplayMode: "off"})
 
     // Connect to the session
     session.connect(token, function(error) {
@@ -29,11 +30,7 @@ const initializeSession = (sessionId, token) => {
     });
 
     session.on('streamCreated', function(event) {
-        session.subscribe(event.stream, 'subscriber', {
-          insertMode: 'append',
-          width: '100%',
-          height: '100%'
-        }, handleError);
+        session.subscribe(event.stream, 'subscriber', subscriberOptions, handleError);
     });
 }
 
