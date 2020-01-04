@@ -17,15 +17,19 @@ export default {
   name: 'HelloWorld',
   data: function(){
     return {
-      subdomain: ""
+      subdomain: "",
+      button: "Pick Me up"
     }
   },
-  props: ['button'],
   created: async function(){
     var full = window.location.host
     this.subdomain = full.split('.')[0]
-    const data = await checkDbExists(this.subdomain);
-    window.console.log("db exist moy",data)
+    try {
+      await checkDbExists(this.subdomain)
+    }
+    catch(err){
+      this.$router.push('/pagenotfound');
+    }
   },
   methods: {
     requestToken: async () => {

@@ -1,10 +1,12 @@
 import Vue from 'vue'
 import App from './App.vue'
-import VueForm from 'vue-form'
+import "@/assets/cssLoader/index"
+import "@/assets/form/index"
+import router from "@/assets/router/index"
 
+// Vue.use(library) makes the Vue components <router-view> from the library interpretable during runtime
 Vue.config.productionTip = false
-Vue.use(VueForm);
 
 new Vue({
-  render: h => h(App),
-}).$mount('#app')
+  el: '#app', router, render: h => h(App)
+})
