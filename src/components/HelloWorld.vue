@@ -30,7 +30,7 @@ export default {
       await checkDbExists(capitalize(this.subdomain))
     }
     catch(err){
-      //this.$router.push('/pagenotfound');
+      this.$router.push('/pagenotfound');
     }
   },
   methods: {
