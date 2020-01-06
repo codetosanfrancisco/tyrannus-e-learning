@@ -1,11 +1,12 @@
 import axiosInstance from "../../axios/axiosInstance";
 
-const loginUser = (email, password) => {
+const logInUser = (email, password, dbName) => {
     return axiosInstance.post("/users/login", {
         email,
-        password
+        password,
+        dbName
     })
 }
 
-export default loginUser;
+export default logInUser;
 
