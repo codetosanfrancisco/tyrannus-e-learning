@@ -2,6 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import "@/assets/cssLoader/index"
 import "@/assets/form/index"
+import "@/assets/vuex/index"
 import router from "@/assets/router/index"
 import vuetify from './plugins/vuetify';
 

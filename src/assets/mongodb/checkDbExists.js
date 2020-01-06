@@ -1,7 +1,7 @@
 import axiosInstance from "../axios/axiosInstance";
 
 const checkDbExists = (dbName) => {
-    return axiosInstance.get("/", {
+    return axiosInstance.post("/", {
         dbName
     })
 }

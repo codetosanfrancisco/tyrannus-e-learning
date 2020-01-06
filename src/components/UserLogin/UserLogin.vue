@@ -26,6 +26,7 @@
 import { extend } from 'vee-validate';
 import { required, email, alpha_num } from 'vee-validate/dist/rules';
 import { logInUser } from "@/assets/mongodb/index"
+import { authStore } from "@/assets/vuex/store/index"
 var capitalize = require('capitalize')
 
 extend('email', {
@@ -43,6 +44,9 @@ extend('required', {
 
 export default {
     name: "UserLogin", 
+    beforeMount: function() {
+        authStore.state.loggedIn ? this.$router.push('/dashboard') : ""
+    },
     mounted: function() {
         var full = window.location.host
         this.subdomain = full.split('.')[0]
@@ -58,9 +62,9 @@ export default {
     methods: {
         logInUser: async function() {
             try {
-                const data = await logInUser(this.email, this.password, capitalize(this.subdomain))
-                // Redirect to user page.
-                window.console.log(data)
+                await logInUser(this.email, this.password, capitalize(this.subdomain))
+                authStore.commit('loggedIn')
+                this.$router.push("/dashboard")
             }
             catch(err) {
                 alert(err)
