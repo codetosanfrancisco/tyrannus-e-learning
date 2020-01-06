@@ -1,17 +1,20 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import HelloWorld from "@/components/HelloWorld.vue";
+import HelloVanilla from "@/components/HelloVanilla.vue"
 import PageNotFound from "@/components/PageNotFound.vue"
+import UserLogin from "@/components/UserLogin/UserLogin.vue"
 
 Vue.use(Router)
 
 const routes = [
-    { path: '/', component: HelloWorld },
-    { path: '/pagenotfound', component: PageNotFound }
+  { path: '/pagenotfound', component: PageNotFound },
+  { path: '/users/login', component: UserLogin },
+  { path: '/', component: HelloVanilla },
   ]
   
 const router = new Router({
-    routes // short for `routes: routes`
+  mode: 'history',
+  routes
 })
 
 export default router;

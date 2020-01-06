@@ -1,4 +1,5 @@
 import checkDbExists from "./checkDbExists";
+import loginUser from "./auth/loginUser";
 
 
-export {checkDbExists}
+export { checkDbExists, loginUser }
