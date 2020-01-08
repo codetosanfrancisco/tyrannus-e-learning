@@ -1,6 +1,6 @@
 <template>
     <div>
-        <button>Create a session</button>
+        <button v-on:click="this.goToCreateSession">Create a session</button>
         <button v-on:click="this.logOut">Log Out</button>
     </div>
 </template>
@@ -16,11 +16,14 @@ export default {
             try {
                 await logOutUser()
                 authStore.commit('logOut')
-                this.$router.push("/users/login")
+                this.$router.push("/user/login")
             }
             catch(err) {
                 alert(err);
             }
+        },
+        goToCreateSession: function() {
+            this.$router.push("/session/new")
         }
     }
 }
