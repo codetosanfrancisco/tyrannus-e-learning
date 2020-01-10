@@ -11,11 +11,11 @@ Vue.use(Router)
 
 const routes = [
   { path: '/pagenotfound', component: PageNotFound },
-  { path: '/user/login', component: UserLogin },
-  { path: '/', component: HelloVanilla },
-  { path: '/dashboard', component: Dashboard },
-  { path: '/session/new', component: CreateSession },
-  { path: '/sessions', component: AllSession }
+  { path: '/user/login', component: UserLogin, name: "UserLogin" },
+  { path: '/', component: HelloVanilla, name: "HelloVanilla" },
+  { path: '/dashboard', component: Dashboard, name: "DashBoard" },
+  { path: '/session/new', component: CreateSession, name: "CreateSession" },
+  { path: '/sessions', component: AllSession, name: "AllSession" }
 ]
   
 const router = new Router({

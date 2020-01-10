@@ -3,6 +3,8 @@ import App from './App.vue'
 import "@/assets/cssLoader/index"
 import "@/assets/form/index"
 import "@/assets/vuex/index"
+import "@/assets/sideBar/index"
+import store from "@/store/index"
 import router from "@/assets/router/index"
 import vuetify from './plugins/vuetify';
 
@@ -13,5 +15,6 @@ new Vue({
   el: '#app',
   router,
   vuetify,
+  store,
   render: h => h(App)
 })

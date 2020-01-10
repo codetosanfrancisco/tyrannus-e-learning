@@ -1,17 +1,23 @@
 <template>
     <div class="all-sessions">
+      <SideBar key="this.$route.name"/>
       <div class="all-sessions-left-view">
       </div>
       <div class="all-sessions-right-view">
+          <router-view />
       </div>
     </div>
 </template>
 
 <script>
 import { getAllSessions} from "@/assets/mongodb/session/index"
+import SideBar from "@/components/SideBar/SideBar";
 
 export default {
-    name: "AllSession",
+    name: "AfterAuthStandard",
+    components: {
+        SideBar
+    },
     data: function() {
         return {
             sessions:[],
