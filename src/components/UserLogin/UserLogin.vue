@@ -25,8 +25,8 @@
 <script>
 import { extend } from 'vee-validate';
 import { required, email, alpha_num } from 'vee-validate/dist/rules';
-import { logInUser } from "@/assets/mongodb/index"
-import { authStore } from "@/assets/vuex/store/index"
+import { logInUser } from "@/lib/mongodb/index"
+import { authStore } from "@/lib/vuex/store/index"
 var capitalize = require('capitalize')
 
 extend('email', {

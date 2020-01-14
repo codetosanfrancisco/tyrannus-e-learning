@@ -5,8 +5,8 @@
 </template>
 
 <script>
-import BeforeAuth from "@/components/Layouts/BeforeAuth"
-import AfterAuthStandard from "@/components/Layouts/AfterAuthStandard"
+import Auth from "@/components/Layouts/Auth"
+import Standard from "@/components/Layouts/Standard"
 
 export default {
   computed: {
@@ -14,14 +14,17 @@ export default {
       return this.$store.getters.layout
     }
   },
+  mounted() {
+      this.$store.commit('SET_LAYOUT', this.$route.meta.layout)
+  },
   components: {
-    'before-auth': BeforeAuth,
-    'after-auth-standard': AfterAuthStandard
+    'auth': Auth,
+    'standard': Standard
     // define as many layouts you want for the application
   },
   watch:{
     $route (){
-        this.$store.commit('SET_LAYOUT', 'after-auth-standard')
+        this.$store.commit('SET_LAYOUT', this.$route.meta.layout)
     }
 } 
 }

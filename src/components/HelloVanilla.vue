@@ -11,8 +11,8 @@
 </template>
 
 <script>
-import { initializeSession, requestToken } from "@/assets/opentok/index"
-import { checkDbExists } from "@/assets/mongodb/index"
+import { initializeSession, requestToken } from "@/lib/opentok/index"
+import { checkDbExists } from "@/lib/mongodb/index"
 var capitalize = require('capitalize')
 
 export default {
@@ -44,5 +44,4 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style>
-  @import "../assets/HelloWorld.scss"
 </style>
