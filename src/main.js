@@ -7,6 +7,9 @@ import "@/lib/sideBar/index"
 import store from "@/store/index"
 import router from "@/lib/router/index"
 import vuetify from './lib/vuetify'
+import VModal from 'vue-js-modal'
+ 
+Vue.use(VModal)
 // Import VueScheduler
 import VueScheduler from 'v-calendar-scheduler';
 

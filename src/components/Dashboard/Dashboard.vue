@@ -1,17 +1,6 @@
 <template>
     <div>
-        <vue-scheduler :events="events" :available-views="['week', 'day']" initial-view="week" disable-dialog="true"/>
-        <v-btn
-                v-show="!hidden"
-                color="pink"
-                dark
-                fixed
-                bottom
-                right
-                fab
-              >
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
+      Dashboard
     </div>
 </template>
 

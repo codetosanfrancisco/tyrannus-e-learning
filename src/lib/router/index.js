@@ -26,7 +26,7 @@ const routes = [
     ]
   },
   {
-    path: '/session', component: SessionRoot, children: [
+    path: '/session', component: SessionRoot, name: "Session",children: [
       {
         path: 'all',
         component: Sessions,

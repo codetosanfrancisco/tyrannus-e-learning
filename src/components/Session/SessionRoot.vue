@@ -2,9 +2,8 @@
     <div class="main-content">
         <div class="main-content-menu">
             <div class="functional-calendar" style="width: 90%; margin: auto; padding: 20px 10px;">
-                <functional-calendar v-model="calendarData"  :configs="calendarConfigs"></functional-calendar>
+                <functional-calendar v-model="calendarData"  :configs="calendarConfigs" :text="selectedDate"></functional-calendar>
             </div>       
-            {{ calendarData.selectedDate }}     
             <button v-on:click="create">To Create</button>
         </div>
         <div class="main-content-body">
@@ -26,19 +25,33 @@ export default {
     },
     data() {
         return {
-            calendarData: {},
+            calendarData: {
+                
+            },
             calendarConfigs: {
                 sundayStart: true,
                 dateFormat: 'dd/mm/yyyy',
                 isDatePicker: true,
                 isDateRange: false,
-                isDark: true
+                isDark: true,
             }
         }
     },
     methods: {
         create() {
             this.$router.push({ name: 'NewSession' })
+        },
+        lastSunday(d) {
+            d = new Date(d);
+            window.console.log(d);
+            d.setDate(d.getDate() - d.getDay());
+            return d;
+        }
+    },
+    computed: {
+        selectedDate: function(){
+            this.$store.commit('SET_SELECTED_DATE', this.calendarData.selectedDate)
+            return this.calendarData.selectedDate
         }
     }
 }
