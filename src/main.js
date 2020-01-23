@@ -8,6 +8,9 @@ import store from "@/store/index"
 import router from "@/lib/router/index"
 import vuetify from './lib/vuetify'
 import VModal from 'vue-js-modal'
+import DatetimePicker from 'vuetify-datetime-picker'
+
+Vue.use(DatetimePicker)
  
 Vue.use(VModal)
 // Import VueScheduler

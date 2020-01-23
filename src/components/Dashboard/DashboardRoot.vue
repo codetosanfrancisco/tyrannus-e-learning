@@ -1,11 +1,8 @@
 <template>
     <div class="main-content">
         <div class="main-content-menu">
-            <div class="functional-calendar" style="width: 90%; margin: auto; padding: 20px 10px;">
-                <functional-calendar v-model="calendarData"  :configs="calendarConfigs"></functional-calendar>
-            </div>       
-            {{ calendarData.selectedDate }}     
-            <button v-on:click="create">To Create</button>
+            <div v-on:click="create">All User</div>
+            <div v-on:click="create">Add New User</div>
         </div>
         <div class="main-content-body">
             <TopBar/>
@@ -16,13 +13,11 @@
 
 <script>
 import TopBar from "@/components/TopBar/TopBar"
-import { FunctionalCalendar } from 'vue-functional-calendar';
 
 export default {
     name: "DashboardRoot",
     components: {
-        TopBar,
-        FunctionalCalendar
+        TopBar
     },
     data() {
         return {

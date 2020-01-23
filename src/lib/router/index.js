@@ -8,6 +8,7 @@ import DashboardRoot from "@/components/Dashboard/DashboardRoot"
 import NewSession from "@/components/Session/NewSession"
 import Sessions from "@/components/Session/Sessions"
 import SessionRoot from "@/components/Session/SessionRoot"
+import Live from "@/components/Live/Live"
 
 Vue.use(Router)
 
@@ -40,6 +41,12 @@ const routes = [
         meta: { layout: "standard" }
       }
     ]
+  },
+  {
+    path: '/live/:id',
+    component: Live,
+    name: "Live",
+    meta: { layout: "auth" }
   }
 ]
   

@@ -1,8 +1,10 @@
 import axiosInstance from "../../axios/axiosInstance";
 
-const createSession = (sessionTitle) => {
-    axiosInstance.post("/session/create", {
-        sessionTitle
+const createSession = (data) => {
+    return axiosInstance.post("/session/new", {
+        session: {
+            ...data
+        }
     })
 }
 

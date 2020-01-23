@@ -4,7 +4,8 @@
             <div class="functional-calendar" style="width: 90%; margin: auto; padding: 20px 10px;">
                 <functional-calendar v-model="calendarData"  :configs="calendarConfigs" :text="selectedDate"></functional-calendar>
             </div>       
-            <button v-on:click="create">To Create</button>
+            <div v-on:click="create">New Sessions</div>
+            <div>All Sessions</div>
         </div>
         <div class="main-content-body">
             <TopBar/>
@@ -15,7 +16,7 @@
 
 <script>
 import TopBar from "@/components/TopBar/TopBar"
-import { FunctionalCalendar } from 'vue-functional-calendar';
+import { FunctionalCalendar } from 'vue-functional-calendar'
 
 export default {
     name: "SessionRoot",
@@ -52,7 +53,20 @@ export default {
         selectedDate: function(){
             this.$store.commit('SET_SELECTED_DATE', this.calendarData.selectedDate)
             return this.calendarData.selectedDate
+        },
+    },
+    created() {
+    this.$store.subscribe((mutation, state) => {
+      if (mutation.type === 'SET_SELECTED_DATE') {
+        window.console.log(`Updating to ${state.selectedDate}`);
+
+        // Do whatever makes sense now
+        if (state.selectedDate) {
+          var arr = state.selectedDate.split('/');
+          this.selectedDate = new Date(arr[2], arr[1] - 1, arr[0]);
         }
+      }
+    });
     }
 }
 </script>

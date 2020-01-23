@@ -41,8 +41,17 @@ export default {
             this.updateSideBar(); 
         },
         updateSideBar: function() {
-            $('.v-sidebar-menu-items').find(`#${this.$route.name}`).css('background-color', '#212121')
-            $('.v-sidebar-menu-item').not(`#${this.$route.name}`).css('background-color', '#2f3640')  
+            const SESSIONS = ['NewSession', 'Sessions']
+            const DASHBOARD = ['Dashboard']
+            var target;
+            if(SESSIONS.includes(this.$route.name)) {
+                target = 'Sessions'
+            }
+            else if(DASHBOARD.includes(this.$route.name)) {
+                target = 'Dashboard'
+            }
+            $('.v-sidebar-menu-items').find(`#${target}`).css('background-color', '#212121')
+            $('.v-sidebar-menu-item').not(`#${target}`).css('background-color', '#2f3640')  
         }
     },
     watch: {
