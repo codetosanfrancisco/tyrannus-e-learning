@@ -15,7 +15,7 @@ const initializeSession = (sessionId, token, role) => {
     var session = OT.initSession(apiKey, sessionId);
 
     // Create a publisher
-    var publisher = OT.initPublisher('mentor',{ ...publisherOptions , style: { nameDisplayMode: "on", insertDefaultUI: true} }, handleError);
+    var publisher = OT.initPublisher(role ,{ ...publisherOptions , style: { nameDisplayMode: "on", insertDefaultUI: true} }, handleError);
 
     publisher.setStyle({buttonDisplayMode: "off"})
 
@@ -40,6 +40,8 @@ const initializeSession = (sessionId, token, role) => {
             document.getElementById(`${role}`).appendChild(event.element);
         });
     });
+
+    return {publisher, session};
 }
 
 export default initializeSession;

@@ -9,6 +9,7 @@ import NewSession from "@/components/Session/NewSession"
 import Sessions from "@/components/Session/Sessions"
 import SessionRoot from "@/components/Session/SessionRoot"
 import Live from "@/components/Live/Live"
+import Waiting from "@/components/Live/Waiting"
 
 Vue.use(Router)
 
@@ -46,6 +47,12 @@ const routes = [
     path: '/live/:id',
     component: Live,
     name: "Live",
+    meta: { layout: "auth" }
+  },
+  {
+    path: '/waiting/:id',
+    component: Waiting,
+    name: "Waiting",
     meta: { layout: "auth" }
   }
 ]
