@@ -1,3 +1,4 @@
 import sendMessage from "./sendMessage";
+import getMessages from "./getMessages";
 
-export { sendMessage }
+export { sendMessage, getMessages }

@@ -57,7 +57,7 @@ import { getSession } from "@/lib/Live/index";
 import { initializeSession } from "@/lib/opentok/index"
 import 'swiper/dist/css/swiper.css'
 import { swiper, swiperSlide } from 'vue-awesome-swiper'
-import { sendMessage } from '@/lib/mongodb/messages/index'
+import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
 import io from 'socket.io-client';
 
 export default {
@@ -76,13 +76,15 @@ export default {
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
             });
-
             socket.on('message', function(data) {
                 self.messages = data;
             });
             const {session, publisher } = initializeSession(data.data.sessionId, data.data.token, data.data.role)
             this.publisher = publisher;
             this.session = session;
+
+            const messageData = await getMessages('Startup', this.sessionId);
+            this.messages = messageData.data.messages;
         }
         catch(e) {
             alert(e);
