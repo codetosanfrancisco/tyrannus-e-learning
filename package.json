@@ -8,6 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@chenfengyuan/vue-qrcode": "^1.0.2",
     "@opentok/client": "^2.16.3",
     "axios": "^0.19.0",
     "capitalize": "^2.0.1",

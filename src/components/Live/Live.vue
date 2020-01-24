@@ -1,5 +1,14 @@
 <template>
 <div>
+    <modal name="qr-code" width="300" height="300" :clickToClose="false">
+        <div style="height: 80%; display: flex; align-items: center; justify-content: center; flex-direction: column; ">
+            <qrcode :value="this.sessionId" :options="{ width: 200 }"></qrcode>
+            <div>Scan the QR Code</div>
+        </div>
+        <div style="display: flex; align-items: flex-end; justify-content: flex-end; height: 20%; ">
+            <v-btn tile dark v-on:click="this.hideQR" large class="close-qr">Close</v-btn>
+        </div>
+    </modal>
     <div class="video-sidebar">
         <div class="navigation-icons">
             <div class="navigation-icon">
@@ -10,6 +19,9 @@
             </div>
             <div class="navigation-icon">
                 <v-icon color="white" >screen_share</v-icon>
+            </div>
+            <div class="navigation-icon" v-on:click="this.showQR">
+                <v-icon color="white" >devices</v-icon>
             </div>
         </div>
         <div class="navigation-icon">
@@ -79,7 +91,7 @@ export default {
     name: "Live",
     components: {
         swiper,
-        swiperSlide
+        swiperSlide,
     },
     created: async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
@@ -133,12 +145,22 @@ export default {
             catch(e) {
                 alert(e);
             }
+        },
+        showQR () {
+            this.$modal.show('qr-code');
+        },
+        hideQR () {
+            this.$modal.hide('qr-code');
         }
     }
 }
 </script>
 
 <style scoped>
+    .close-qr {
+        width: 100%;
+    }
+
     .navigation-icon {
         width: 100%;
         display: flex;

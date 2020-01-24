@@ -9,6 +9,9 @@ import router from "@/lib/router/index"
 import vuetify from './lib/vuetify'
 import VModal from 'vue-js-modal'
 import DatetimePicker from 'vuetify-datetime-picker'
+import VueQrcode from '@chenfengyuan/vue-qrcode';
+
+Vue.component(VueQrcode.name, VueQrcode);
 
 Vue.use(DatetimePicker)
  
