@@ -1,6 +1,21 @@
 <template>
 <div>
-    <div class="video-sidebar"></div>
+    <div class="video-sidebar">
+        <div class="navigation-icons">
+            <div class="navigation-icon">
+                <v-icon color="white" >home</v-icon>
+            </div>
+            <div class="navigation-icon">
+                <v-icon color="white" >color_lens</v-icon>
+            </div>
+            <div class="navigation-icon">
+                <v-icon color="white" >screen_share</v-icon>
+            </div>
+        </div>
+        <div class="navigation-icon">
+            <v-icon color="white" class="end-call">phone</v-icon>
+        </div>
+    </div>
     <div class="live-container">
         <div class="videos">
             <div id="mentees">
@@ -124,12 +139,31 @@ export default {
 </script>
 
 <style scoped>
+    .navigation-icon {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 70px;
+    }
+
+    .navigation-icon:hover {
+        background-color: #a4b0be;
+        cursor: pointer;
+    }
+
+    .navigation-icons {
+        flex-grow: 1
+    }
+
     .video-sidebar {
         position: fixed;
         height: 100%;
         width: 70px;
         background-color: #2f3640;
         z-index: 100;
+        display: flex;
+        flex-direction: column;
     }
 
     .message {
