@@ -32,10 +32,17 @@
                     </div>
                 </div>
                 <div class="chat-container">
-                    <div class="chat"></div>
+                    <div class="chat">
+                        <div class="message-container" v-for="message in messages" v-bind:key="message.body">
+                            <div class="message">
+                                {{ message.body }}
+                                <div><small>{{ message.email }}</small></div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="input-container">
-                        <div class="input-div"><input class="input"/></div>
-                        <div class="send-div"><v-btn fab dark small><v-icon small>send</v-icon></v-btn></div>
+                        <div class="input-div"><input class="input" v-model="message"/></div>
+                        <div class="send-div"><v-btn fab dark small v-on:click="this.sendMessage"><v-icon small>send</v-icon></v-btn></div>
                     </div>
                 </div>
             </div>
@@ -50,9 +57,8 @@ import { getSession } from "@/lib/Live/index";
 import { initializeSession } from "@/lib/opentok/index"
 import 'swiper/dist/css/swiper.css'
 import { swiper, swiperSlide } from 'vue-awesome-swiper'
-
-
-
+import { sendMessage } from '@/lib/mongodb/messages/index'
+import io from 'socket.io-client';
 
 export default {
     name: "Live",
@@ -63,8 +69,17 @@ export default {
     created: async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
         try {
-            const data = await getSession(this.$route.params.id);
-            window.console.log(data.data);
+            const self = this;
+            this.sessionId = this.$route.params.id;
+            const data = await getSession(this.sessionId);
+            const socket = io.connect('http://localhost:8081/');
+            socket.on('connect', function() {
+                socket.emit('room', self.sessionId);
+            });
+
+            socket.on('message', function(data) {
+                self.messages = data;
+            });
             const {session, publisher } = initializeSession(data.data.sessionId, data.data.token, data.data.role)
             this.publisher = publisher;
             this.session = session;
@@ -84,7 +99,23 @@ export default {
             publisher: null,
             muted: false,
             see: false,
-            session: null
+            session: null,
+            sessionId: '',
+            message: '',
+            socket: null,
+            messages: []
+        }
+    },
+    methods: {
+        sendMessage: async function() {
+            try {
+                const message = this.message;
+                this.message = '';
+                await sendMessage('voon@gmail.com', message, 'Startup', this.sessionId);
+            }
+            catch(e) {
+                alert(e);
+            }
         }
     }
 }
@@ -97,6 +128,19 @@ export default {
         width: 70px;
         background-color: #2f3640;
         z-index: 100;
+    }
+
+    .message {
+        background-color: #f1f2f6;
+        padding: 5px;
+        margin: 10px;
+        border-radius: 5px;
+        width: 50%;
+        word-break: break-all;
+    }
+    .message-container {
+        display: flex;
+        justify-content: flex-end
     }
 
     #mentor {
@@ -193,8 +237,10 @@ export default {
     }
 
     .chat {
-        width: 100%;
+        max-width: 100%;
         height: 90%;
+        overflow-y: scroll;
+        padding: 5px;
     }
 
     .input-container {
