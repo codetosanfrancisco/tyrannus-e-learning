@@ -65,7 +65,7 @@
                     </v-select>
 
                     <v-select
-                      v-model="participants"
+                      v-model="mentees"
                       :items="participantItems"
                       label="Participants"
                       multiple
@@ -142,10 +142,10 @@ export default {
         errorMessage: "You have another session booking overlapped.",
         start: null,
         end: null,
-        mentorItems: ["voonshunzhi@gmail.com"],
-        participantItems: ["jared@gmail.com"],
+        mentorItems: ["mentor1@gmail.com", "mentor2@gmail.com", "mentor3@gmail.com"],
+        participantItems: ["mentee1@gmail.com", "mentee2@gmail.com", "mentee3@gmail.com"],
         mentors: [],
-        participants: [],
+        mentees: [],
         title: ""
       }
     },
@@ -169,8 +169,8 @@ export default {
             agenda: this.agenda,
             start: this.start,
             end: this.end,
-            mentors: [this.mentors],
-            participants: [this.participants]
+            mentors: this.mentors,
+            mentees: this.mentees
           })
         }
         catch(e) {

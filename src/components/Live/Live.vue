@@ -32,19 +32,13 @@
         <div class="videos">
             <div id="mentees">
                 <swiper :options="swiperOption">
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
-                    <swiper-slide><div id="mentee"></div></swiper-slide>
+                    <swiper-slide v-for="item in mentorsRole" v-bind:key="item"><div :id="item" class="mentee"></div></swiper-slide>
+                    <swiper-slide v-for="item in menteesRole" v-bind:key="item"><div :id="item" class="mentee"></div></swiper-slide>
                 </swiper>
             </div>
             <div class="lower-container">
                 <div class="mentor-container">
-                    <div id="mentor"></div>
+                    <div id="mentor#0" class="mentor"></div>
                     <div class="videos-control-buttons">
                         <div class="video-control-buttons-other">
                             <v-btn v-if="!see" v-on:click="publisher.publishVideo(false); see = true" dark class="control-button"><v-icon class="video-call">videocam</v-icon></v-btn>
@@ -98,19 +92,21 @@ export default {
         try {
             const self = this;
             this.sessionId = this.$route.params.id;
-            const data = await getSession(this.sessionId);
-            const socket = io.connect('http://localhost:8081/');
+            const { data: { token, sessionData: { mentors, mentees, sessionId } }} = await getSession(this.sessionId);
+            window.console.log(mentors,mentees, sessionId)
+            this.menteesRole = mentees.map(mentee => mentee.role);
+            this.mentorsRole = mentors.map(mentor => mentor.role).filter(role => role != "mentor#0");
+            const messageData = await getMessages('Startup', this.sessionId);
+            const socket = io.connect('http://localhost:8081/chat-room');
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
             });
             socket.on('message', function(data) {
                 self.messages = data;
             });
-            const {session, publisher } = initializeSession(data.data.sessionId, data.data.token, data.data.role)
+            const {session, publisher } = initializeSession(sessionId, token);
             this.publisher = publisher;
             this.session = session;
-
-            const messageData = await getMessages('Startup', this.sessionId);
             this.messages = messageData.data.messages;
         }
         catch(e) {
@@ -132,7 +128,9 @@ export default {
             sessionId: '',
             message: '',
             socket: null,
-            messages: []
+            messages: [],
+            mentorsRole: [],
+            menteesRole: []
         }
     },
     methods: {
@@ -201,7 +199,7 @@ export default {
         justify-content: flex-end
     }
 
-    #mentor {
+    .mentor {
         width: 100%;
         height: 102%;
         border-radius: 10px;
@@ -250,7 +248,7 @@ export default {
         padding-left: 80px;
     }
 
-    #mentee {
+    .mentee {
         background-color: #a4b0be;
         width: 200px;
         height: 95%;
