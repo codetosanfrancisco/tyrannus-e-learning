@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { loginSession } from "@/lib/mongodb/video-session/index";
+import { loginSession, getWaiting, logoutSession } from "@/lib/mongodb/video-session/index";
 import io from 'socket.io-client';
 
 export default {
@@ -36,9 +36,16 @@ export default {
             participants: []
         }
     },
-    created() {
+    async created() {
         const self = this;
         this.sessionId = this.$route.params.id;
+        window.addEventListener('beforeunload', this.logoutSession);
+        try {
+            const { data } = await getWaiting(this.sessionId);
+            this.participants = data.participants;
+        } catch(e) {
+            alert(e);
+        }
         const socket = io.connect('http://localhost:8081/waiting-room');
         socket.on('connect', function() {
             socket.emit('waiting-room', self.sessionId);
@@ -50,7 +57,6 @@ export default {
     methods: {
         loginSession: async function() {
             const { data: {email, isLoggedIn, role }} = await loginSession(this.sessionId, 'Startup', this.email, this.passcode);
-            window.console.log(email, isLoggedIn, role)
             if(isLoggedIn) {
                 this.$store.commit('LOGIN_CURRENT_SESSION', {
                     email, 
@@ -60,7 +66,8 @@ export default {
             }
         },
         logoutSession: async function() {
-
+            const email = this.$store.getters.currentSession.email;
+            await logoutSession(this.sessionId, 'Startup', email);
         }
     }
 }

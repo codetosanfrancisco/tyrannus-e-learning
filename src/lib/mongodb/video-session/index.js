@@ -1,3 +1,5 @@
+import getWaiting from "./getWaiting";
 import loginSession from "./loginSession";
+import logoutSession from "./logoutSession";
 
-export { loginSession }
+export { loginSession, getWaiting, logoutSession }
