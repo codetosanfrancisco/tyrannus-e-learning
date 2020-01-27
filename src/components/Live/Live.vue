@@ -32,8 +32,8 @@
         <div class="videos">
             <div id="mentees">
                 <swiper :options="swiperOption">
-                    <swiper-slide v-for="item in mentorsRole" v-bind:key="item"><div :id="item" class="mentee"></div></swiper-slide>
-                    <swiper-slide v-for="item in menteesRole" v-bind:key="item"><div :id="item" class="mentee"></div></swiper-slide>
+                    <swiper-slide v-for="item in mentorsRole" v-bind:key="item"><div :id="item.role" class="mentee"></div><div class="label-email">{{ item.email }}</div></swiper-slide>
+                    <swiper-slide v-for="item in menteesRole" v-bind:key="item"><div :id="item.role" class="mentee"></div><div class="label-email">{{ item.email }}</div></swiper-slide>
                     </swiper>
             </div>
             <div class="lower-container">
@@ -51,10 +51,10 @@
                             <v-btn color="error control-button" v-on:click="session.unpublish(publisher)"><v-icon class="end-call">phone</v-icon></v-btn>
                         </div>
                     </div>
+                    <div class="zero-mentor-label">{{ zeroMentor.email }}</div>
                 </div>
                 <div class="chat-container">
                     <div class="chat">
-                        {{ this.$store.getters.currentSession.role }}
                         <div class="message-container" v-for="message in messages" v-bind:key="message.body">
                             <div class="message">
                                 {{ message.body }}
@@ -95,8 +95,9 @@ export default {
             this.sessionId = this.$route.params.id;
             const { data: { token, sessionData: { mentors, mentees, sessionId } }} = await getSession(this.sessionId);
             window.console.log(mentors,mentees, sessionId)
-            this.menteesRole = mentees.map(mentee => mentee.role);
-            this.mentorsRole = mentors.map(mentor => mentor.role).filter(role => role != "mentor#0");
+            this.menteesRole = mentees;
+            this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor#0");
+            this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor#0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect('http://localhost:8081/chat-room');
             socket.on('connect', function() {
@@ -131,7 +132,8 @@ export default {
             socket: null,
             messages: [],
             mentorsRole: [],
-            menteesRole: []
+            menteesRole: [],
+            zeroMentor: null
         }
     },
     methods: {
@@ -156,6 +158,23 @@ export default {
 </script>
 
 <style scoped>
+    .zero-mentor-label {
+         position: absolute;
+        top: 50%;
+        left: 50%;
+        font-size: 0.8em;
+        transform: translate(-50%,-50%);
+        color: white;
+        padding: 10px;
+        display: none;
+        background-color: rgba(0,0,0,0.5);
+        border: 0;
+    }
+
+    .mentor-container:hover > .zero-mentor-label {
+        display: block;
+    }
+
     .close-qr {
         width: 100%;
     }
@@ -213,6 +232,19 @@ export default {
         height: 20%;
     }
 
+    .label-email {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        font-size: 0.8em;
+        transform: translate(-50%,-50%);
+        color: white;
+        padding: 5px;
+        display: none;
+        background-color: rgba(0,0,0,0.5);
+        border: 0;
+    }
+
     .videos-control-buttons {
         display: flex;
         align-items: center;
@@ -251,11 +283,15 @@ export default {
 
     .mentee {
         background-color: #a4b0be;
-        width: 200px;
         height: 95%;
         margin: 5px;
         border-radius: 10px;
         overflow: hidden;
+        position: relative;
+    }
+
+    .swiper-slide:hover > .label-email {
+        display: block;
     }
 
     .lower-container {
