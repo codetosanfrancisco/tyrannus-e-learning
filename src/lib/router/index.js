@@ -10,6 +10,7 @@ import Sessions from "@/components/Session/Sessions"
 import SessionRoot from "@/components/Session/SessionRoot"
 import Live from "@/components/Live/Live"
 import Waiting from "@/components/Live/Waiting"
+import store from "@/store/index";
 
 Vue.use(Router)
 
@@ -47,7 +48,15 @@ const routes = [
     path: '/live/:id',
     component: Live,
     name: "Live",
-    meta: { layout: "auth" }
+    meta: { layout: "auth" },
+    beforeEnter: (to, from, next) => {
+      if(store.getters.currentSession.loggedIn && store.getters.currentRoomActive) {
+        next()
+      }else {
+        window.console.log(to, store.getters.currentRoomActive, store.getters.currentSession)
+        next(`/waiting/${to.params.id}`)
+      }
+    }
   },
   {
     path: '/waiting/:id',

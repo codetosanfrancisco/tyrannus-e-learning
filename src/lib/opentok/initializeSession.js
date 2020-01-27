@@ -10,12 +10,12 @@ const handleError = (error) => {
     }
   }
   
-const initializeSession = (sessionId, token) => {
+const initializeSession = (sessionId, token, role) => {
 
     var session = OT.initSession(apiKey, sessionId);
 
     // Create a publisher
-    var publisher = OT.initPublisher('mentor#0' ,{ ...publisherOptions , style: { nameDisplayMode: "on", insertDefaultUI: true} }, handleError);
+    var publisher = OT.initPublisher(role,{ ...publisherOptions, name: role, role: role }, handleError);
 
     publisher.setStyle({buttonDisplayMode: "off"})
 
@@ -34,11 +34,12 @@ const initializeSession = (sessionId, token) => {
     });
 
     session.on('streamCreated', function(event) {
-        // session.subscribe(event.stream, 'subscriber', subscriberOptions, handleError);
-        var subscriber = session.subscribe(event.stream, {insertDefaultUI: false, ...subscriberOptions});
-        subscriber.on('videoElementCreated', function(event) {
-            document.getElementById(`mentee`).appendChild(event.element);
-        });
+        window.console.log(event);
+        session.subscribe(event.stream, event.stream.name, subscriberOptions, handleError);
+        // var subscriber = session.subscribe(eve.stream, {...subscriberOptions});
+        // subscriber.on('videoElementCreated', function(event) {
+        //     document.getElementById(eve.stream.name).appendChild(event.element);
+        // });
     });
 
     return {publisher, session};

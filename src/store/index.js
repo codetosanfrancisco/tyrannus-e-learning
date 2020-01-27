@@ -14,7 +14,8 @@ const store = new Vuex.Store({
       sessionId: null,
       email: null,
       role: null
-    }
+    },
+    currentRoomActive: false
   },
   mutations: {
     SET_LAYOUT (state, payload) {
@@ -28,7 +29,7 @@ const store = new Vuex.Store({
         loggedIn: true,
         sessionId: payload.sessionId,
         email: payload.email,
-        role: payload.role
+        role: payload.role,
       }
     },
     LOGOUT_CURRENT_SESSION(state) {
@@ -36,8 +37,11 @@ const store = new Vuex.Store({
         loggedIn: false,
         sessionId: null,
         email: null,
-        role: null
+        role: null,
       }
+    },
+    MAKE_ROOM_ACTIVE(state, payload) {
+        state.currentRoomActive = payload.roomActive;
     }
   },
   getters: {
@@ -49,6 +53,9 @@ const store = new Vuex.Store({
     },
     currentSession(state) {
       return state.currentSession
+    },
+    currentRoomActive(state) {
+      return state.currentRoomActive; 
     }
   }
 })

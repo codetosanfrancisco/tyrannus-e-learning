@@ -34,7 +34,7 @@
                 <swiper :options="swiperOption">
                     <swiper-slide v-for="item in mentorsRole" v-bind:key="item"><div :id="item" class="mentee"></div></swiper-slide>
                     <swiper-slide v-for="item in menteesRole" v-bind:key="item"><div :id="item" class="mentee"></div></swiper-slide>
-                </swiper>
+                    </swiper>
             </div>
             <div class="lower-container">
                 <div class="mentor-container">
@@ -54,6 +54,7 @@
                 </div>
                 <div class="chat-container">
                     <div class="chat">
+                        {{ this.$store.getters.currentSession.role }}
                         <div class="message-container" v-for="message in messages" v-bind:key="message.body">
                             <div class="message">
                                 {{ message.body }}
@@ -104,7 +105,7 @@ export default {
             socket.on('message', function(data) {
                 self.messages = data;
             });
-            const {session, publisher } = initializeSession(sessionId, token);
+            const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role);
             this.publisher = publisher;
             this.session = session;
             this.messages = messageData.data.messages;
@@ -116,7 +117,7 @@ export default {
     data: function() {
         return {
             swiperOption: {
-                slidesPerView: 6,
+                slidesPerView: 5,
                 centeredSlides: false,
                 spaceBetween: 20,
                 grabCursor: true,

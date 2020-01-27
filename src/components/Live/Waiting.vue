@@ -14,6 +14,7 @@
             v-model="passcode"
         ></v-text-field>
         <v-btn dark tile v-on:click="this.loginSession">Submit</v-btn>
+        <v-btn dark tile v-on:click="this.enterRoom" :disabled="roomActive">Enter room</v-btn>
 
         <div>Currently in the room: </div>
         <div>
@@ -33,7 +34,8 @@ export default {
             passcode: '',
             email: '',
             sessionId: '',
-            participants: []
+            participants: [],
+            roomActive: true
         }
     },
     async created() {
@@ -43,6 +45,8 @@ export default {
         try {
             const { data } = await getWaiting(this.sessionId);
             this.participants = data.participants;
+            this.roomActive = !data.roomActive
+            this.$store.commit('MAKE_ROOM_ACTIVE', data)
         } catch(e) {
             alert(e);
         }
@@ -51,12 +55,19 @@ export default {
             socket.emit('waiting-room', self.sessionId);
         });
         socket.on('people-who-joined', function(data) {
+            window.console.log('people-who-joined')
             self.participants = data;
         });
+        socket.on('active-room', function(data){
+            window.console.log(data)
+            self.roomActive = !data.roomActive;
+            self.$store.commit('MAKE_ROOM_ACTIVE', data)
+        })
     },
     methods: {
         loginSession: async function() {
             const { data: {email, isLoggedIn, role }} = await loginSession(this.sessionId, 'Startup', this.email, this.passcode);
+            window.console.log("isLoggedIn", isLoggedIn);
             if(isLoggedIn) {
                 this.$store.commit('LOGIN_CURRENT_SESSION', {
                     email, 
@@ -67,7 +78,12 @@ export default {
         },
         logoutSession: async function() {
             const email = this.$store.getters.currentSession.email;
-            await logoutSession(this.sessionId, 'Startup', email);
+            if(email) {
+                await logoutSession(this.sessionId, 'Startup', email);
+            }
+        },
+        enterRoom: function() {
+            this.$router.push(`/live/${this.sessionId}`)
         }
     }
 }
