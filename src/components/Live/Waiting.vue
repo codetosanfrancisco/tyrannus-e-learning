@@ -50,7 +50,7 @@ export default {
         } catch(e) {
             alert(e);
         }
-        const socket = io.connect('http://localhost:8081/waiting-room');
+        const socket = io.connect(`${ process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}waiting-room`);
         socket.on('connect', function() {
             socket.emit('waiting-room', self.sessionId);
         });
@@ -66,8 +66,9 @@ export default {
     },
     methods: {
         loginSession: async function() {
+            window.console.log(this.email, this.passcode, this.sessionId);
             const { data: {email, isLoggedIn, role }} = await loginSession(this.sessionId, 'Startup', this.email, this.passcode);
-            window.console.log("isLoggedIn", isLoggedIn);
+            window.console.log("isLoggedIn", isLoggedIn, email, role);
             if(isLoggedIn) {
                 this.$store.commit('LOGIN_CURRENT_SESSION', {
                     email, 

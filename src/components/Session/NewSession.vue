@@ -192,36 +192,37 @@ export default {
     });
     },
     computed: mapState(['selectedDate']),
+      // .new-session 
+  //   padding: 20px 0
+
+  // .new-session-form 
+  //   padding: 20px
+
+  // .new-session-form-title
+  //   padding: 20px
+
+  // .new-session-form-body 
+  //   padding: 0 20px
+
+  // .new-session-form-buttons
+  //   display: flex
+  //   justify-content: flex-end
+  //   padding: 20px 20px
+
+  // .new-session-loader-con
+  //   display: flex
+  //   justify-content: center
+  //   align-items: center
+  //   flex-direction: column
+
+  // .new-session-loader
+  //   height: 100%
+  //   display: flex
+  //   justify-content: center
+  //   align-items: center
 }
 </script>
 
-<style lang='sass'>
-  .new-session 
-    padding: 20px 0
+<style >
 
-  .new-session-form 
-    padding: 20px
-
-  .new-session-form-title
-    padding: 20px
-
-  .new-session-form-body 
-    padding: 0 20px
-
-  .new-session-form-buttons
-    display: flex
-    justify-content: flex-end
-    padding: 20px 20px
-
-  .new-session-loader-con
-    display: flex
-    justify-content: center
-    align-items: center
-    flex-direction: column
-
-  .new-session-loader
-    height: 100%
-    display: flex
-    justify-content: center
-    align-items: center
 </style>

@@ -2,7 +2,7 @@
     <div class="main-content">
         <div class="main-content-menu">
             <div class="functional-calendar" style="width: 90%; margin: auto; padding: 20px 10px;">
-                <functional-calendar v-model="calendarData"  :configs="calendarConfigs" :text="selectedDate"></functional-calendar>
+                <!-- <functional-calendar v-model="calendarData"  :configs="calendarConfigs" :text="selectedDate"></functional-calendar> -->
             </div>       
             <div v-on:click="create">New Sessions</div>
             <div>All Sessions</div>
@@ -16,13 +16,13 @@
 
 <script>
 import TopBar from "@/components/TopBar/TopBar"
-import { FunctionalCalendar } from 'vue-functional-calendar'
+// import { FunctionalCalendar } from 'vue-functional-calendar'
 
 export default {
     name: "SessionRoot",
     components: {
         TopBar,
-        FunctionalCalendar
+        // FunctionalCalendar
     },
     data() {
         return {

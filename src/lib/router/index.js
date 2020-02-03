@@ -8,7 +8,7 @@ import DashboardRoot from "@/components/Dashboard/DashboardRoot"
 import NewSession from "@/components/Session/NewSession"
 import Sessions from "@/components/Session/Sessions"
 import SessionRoot from "@/components/Session/SessionRoot"
-import Live from "@/components/Live/Live"
+import LiveTest from "@/components/Live/LiveTest"
 import Waiting from "@/components/Live/Waiting"
 import store from "@/store/index";
 
@@ -46,7 +46,7 @@ const routes = [
   },
   {
     path: '/live/:id',
-    component: Live,
+    component: LiveTest,
     name: "Live",
     meta: { layout: "auth" },
     beforeEnter: (to, from, next) => {

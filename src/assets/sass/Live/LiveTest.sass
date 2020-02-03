@@ -1,0 +1,185 @@
+@import "../shared/mobile-responsive.sass"
+   
+.zero-mentor-label 
+   position: absolute
+   top: 50%
+   left: 50%
+   font-size: 0.8em
+   transform: translate(-50%,-50%)
+   color: white
+   padding: 10px
+   display: none
+   background-color: rgba(0,0,0,0.5)
+   border: 0
+   z-index: 10
+
+
+.mentor:hover > .zero-mentor-label 
+   display: block
+
+
+.mentor 
+   width: 100%
+   height: 100%
+   position: relative
+
+
+#mentees 
+   width: 100%
+   overflow: scroll
+   height: 20%
+
+
+.label-email 
+   position: absolute
+   top: 50%
+   left: 50%
+   font-size: 0.8em
+   transform: translate(-50%,-50%)
+   color: white
+   padding: 5px
+   display: none
+   background-color: rgba(0,0,0,0.5)
+   border: 0
+   z-index: 10
+
+
+.videos-control-buttons 
+   display: flex
+   align-items: center
+   z-index: 10
+   background-color: black
+   padding: 5px
+
+
+.video-control-buttons-other 
+   flex-grow: 2
+
+
+.video-control-buttons-end 
+   flex-grow: 1
+   display: flex
+   justify-content: flex-end
+
+
+.end-session-options 
+   display: flex
+
+
+.end-session-yes 
+   flex-grow: 1
+
+
+.end-session-cancel 
+   flex-grow: 1
+
+
+.end-call 
+   transform: rotate(135deg)
+
+
+.control-button 
+   margin: 5px
+
+
+.live-container 
+   height: 100vh
+   background-color: #f1f2f6
+   +sm
+      display: grid
+      grid-template-columns: 70% 30%
+   display: block
+
+
+.workspace 
+   +sm
+      height: 100%
+
+
+.videos 
+   height: 100%
+   display: flex
+   flex-direction: column
+
+
+.mentee 
+   background-color: #a4b0be
+   width: 49%
+   height: 200px
+   position: relative
+   margin: 1px
+
+
+.mentee:hover > .label-email 
+   display: block
+
+
+.lower-container 
+   display: flex
+   height: 80%
+
+
+.mentor-container 
+   background-color: #a4b0be
+   width: 100%
+   height: 40%
+
+
+.mentees-container 
+   width: 100%
+   overflow: scroll
+   display: flex
+   flex-wrap: wrap
+   flex-grow: 1
+   align-content: flex-start
+   padding: 5px 0
+
+
+.chat-container 
+   flex-grow: 1
+   background-color: #a4b0be
+   border-radius: 10px
+   margin: 10px
+
+
+.swiper-container 
+   height: 100%
+
+
+.swiper-slide 
+   margin-right: 0 !important
+
+
+.chat 
+   max-width: 100%
+   height: 90%
+   overflow-y: scroll
+   padding: 5px
+
+
+.input-container 
+   width: 100%
+   height: 10%
+   background-color: #dfe4ea
+   border-bottom-right-radius: 10px
+   border-bottom-left-radius: 10px
+   display: flex
+
+
+.input 
+   height: 55px
+   padding: 10px
+   width: 100%
+
+
+.input-div 
+   width: 85%
+   flex-grow: 5
+
+
+.send-div 
+   flex-grow: 1
+   padding: 10px
+   display: flex
+   justify-content: center
+   align-items: center

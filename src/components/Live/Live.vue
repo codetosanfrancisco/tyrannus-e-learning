@@ -99,7 +99,7 @@ export default {
             this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor#0");
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor#0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
-            const socket = io.connect('http://localhost:8081/chat-room');
+            const socket = io.connect(`${ process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}chat-room`);
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
             });

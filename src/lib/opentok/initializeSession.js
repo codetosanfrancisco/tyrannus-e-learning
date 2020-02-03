@@ -15,12 +15,12 @@ const initializeSession = (sessionId, token, role) => {
     var session = OT.initSession(apiKey, sessionId);
 
     // Create a publisher
-    var publisher = OT.initPublisher(role,{ ...publisherOptions, name: role, role: role }, handleError);
+    var publisher = OT.initPublisher(role,{ ...publisherOptions, name: role }, handleError);
 
     publisher.setStyle({buttonDisplayMode: "off"})
 
     // publisher.on('videoElementCreated', function(event) {
-    //     document.getElementById(`${role }`).appendChild(event.element);
+    //     document.getElementById(`${role}`).appendChild(event.element);
     //   });
 
     // Connect to the session
