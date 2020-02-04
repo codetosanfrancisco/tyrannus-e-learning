@@ -34,7 +34,13 @@
 
             <div class="screens">
                 <div class="screen-container">
-                    <div class="screen"></div>
+                    <div class="screen" id="screen-preview">
+                        
+                    </div>
+                </div>
+                <div class="share-my-screen">
+                    <v-btn color="green darken-1" tile v-on:click="this.initializeScreenSharing" v-if="!sharingMyScreen">Share my screen</v-btn>
+                    <v-btn color="red darken-1" tile v-on:click="this.sharingMyScreen = false" v-if="sharingMyScreen">End screen sharing</v-btn>
                 </div>
             </div>
         </div>
@@ -66,7 +72,7 @@
 
 <script>
 import { getSession } from "@/lib/Live/index";
-import { initializeSession, checkScreenSharing } from "@/lib/opentok/index"
+import { initializeSession, checkScreenSharing, initializeScreenSharing } from "@/lib/opentok/index"
 import { logoutSession } from "@/lib/mongodb/video-session/index";
 import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
 import io from 'socket.io-client';
@@ -119,11 +125,12 @@ export default {
             showAddTab: false,
             currentTab: 0,
             workSpaceTabs: [{
-                name: "WhiteBooard",
+                name: "Screen Share",
                 onClick: function(index) {
                     this.currentTab = index;
                 }
-            }]
+            }],
+            sharingMyScreen: false
         }
     },
     methods: {
@@ -177,6 +184,10 @@ export default {
             } else {
                 alert("Screen sharing is not supported in this browser.")
             }
+        },
+        initializeScreenSharing: function() {
+            initializeScreenSharing(this.session)
+            this.sharingMyScreen = true
         }
     }
     
