@@ -1,4 +1,35 @@
 @import "../shared/mobile-responsive.sass"
+@import "../shared/color.sass"
+
+.add-tabs-header
+   height: 50px
+   background-color: green
+   display: flex
+   justify-content: center
+   align-items: center
+   color: $background-white
+
+.add-tabs
+   display: flex
+   flex-direction: column
+   height: 200px
+
+.add-tab 
+   flex-grow: 1
+   display: flex
+   justify-content: center
+   align-items: center
+   
+.tabs 
+   display: flex
+   align-items: center
+
+.tab
+   border-bottom: 5px solid $background-darkgrey
+   padding: 10px
+   font-size: 0.8em
+   cursor: pointer
+   margin: 10px
    
 .zero-mentor-label 
    position: absolute
@@ -84,7 +115,7 @@
 
 .live-container 
    height: 100vh
-   background-color: #f1f2f6
+   background-color: $background-lightgrey
    +sm
       display: grid
       grid-template-columns: 70% 30%
@@ -103,7 +134,7 @@
 
 
 .mentee 
-   background-color: #a4b0be
+   background-color: $background-kindagrey
    width: 49%
    height: 200px
    position: relative
@@ -120,7 +151,7 @@
 
 
 .mentor-container 
-   background-color: #a4b0be
+   background-color: $background-kindagrey
    width: 100%
    height: 40%
 
@@ -137,7 +168,7 @@
 
 .chat-container 
    flex-grow: 1
-   background-color: #a4b0be
+   background-color: $background-kindagrey
    border-radius: 10px
    margin: 10px
 

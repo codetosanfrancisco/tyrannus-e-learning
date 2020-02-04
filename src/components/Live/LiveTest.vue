@@ -1,14 +1,37 @@
 <template>
 <div>
-    <modal name="end-session">
-        <div>Are you sure you want to end the session?</div>
-        <div class="end-session-options">
-            <div class="end-session-yes" v-on:click="this.endSession">Yes</div>
-            <div class="end-session-cancel" v-on:click="this.hideEndSessionModal">Cancel</div>
-        </div>
-    </modal>
+    <v-dialog v-model="showEndSession" persistent max-width="290">
+        <v-card>
+            <v-card-title class="headline">Are you sure you want to end the session?</v-card-title>
+            <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="green darken-1" text @click="this.endSession">Yes</v-btn>
+            <v-btn color="green darken-1" text @click="this.hideEndSessionModal">Cancel</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+    <v-dialog v-model="showAddTab" persistent max-width="290">
+        <v-card>
+            <div class="add-tabs-header">New</div>
+             <div class="add-tabs">
+                <div class="add-tab" v-on:click="this.addScreenShare">Screen Share</div>
+                <div class="add-tab" v-on:click="this.hideAddTabModal">Whiteboard</div>
+                <div class="add-tab" v-on:click="this.hideAddTabModal">Cancel</div>
+            </div>
+            <v-spacer></v-spacer>
+        </v-card>
+    </v-dialog>
     <div class="live-container">
-        <div class="workspace"></div>
+        <div class="workspace">
+            <div class="tabs">
+                <div v-for="(workSpaceTab, index) in workSpaceTabs" v-bind:key="workSpaceTab.id" class="tab" v-on:click="workSpaceTab.onClick(index)">{{ workSpaceTab.name }}</div>
+ 
+                    <v-btn class="mx-2" fab dark x-small color="blue" v-on:click="this.showAddTabModal">
+                        <v-icon dark>add</v-icon>
+                    </v-btn>
+
+            </div>
+        </div>
         <div class="videos">
             <div class="mentor-container">
                 <div id="mentor#0" class="mentor">
@@ -37,9 +60,8 @@
 
 <script>
 import { getSession } from "@/lib/Live/index";
-import { initializeSession } from "@/lib/opentok/index"
+import { initializeSession, checkScreenSharing } from "@/lib/opentok/index"
 import { logoutSession } from "@/lib/mongodb/video-session/index";
-import 'swiper/dist/css/swiper.css'
 import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
 import io from 'socket.io-client';
 
@@ -76,12 +98,6 @@ export default {
     },
     data: function() {
         return {
-            swiperOption: {
-                slidesPerView: 5,
-                centeredSlides: false,
-                spaceBetween: 20,
-                grabCursor: true,
-            },
             publisher: null,
             muted: false,
             see: false,
@@ -92,7 +108,16 @@ export default {
             messages: [],
             mentorsRole: [],
             menteesRole: [],
-            zeroMentor: null
+            zeroMentor: null,
+            showEndSession: false,
+            showAddTab: false,
+            currentTab: 0,
+            workSpaceTabs: [{
+                name: "WhiteBooard",
+                onClick: function(index) {
+                    this.currentTab = index;
+                }
+            }]
         }
     },
     methods: {
@@ -107,10 +132,16 @@ export default {
             }
         },
         showEndSessionModal () {
-            this.$modal.show('end-session');
+            this.showEndSession = true;
         },
         hideEndSessionModal () {
-            this.$modal.hide('end-session');
+            this.showEndSession = false;
+        },
+        showAddTabModal () {
+            this.showAddTab = true;
+        },
+        hideAddTabModal () {
+            this.showAddTab = false;
         },
         endSession: async function() {
             const email = this.$store.getters.currentSession.email;
@@ -125,6 +156,22 @@ export default {
                 }
             }
         },
+        addScreenShare: function() {
+            if(checkScreenSharing()) {
+                this.workSpaceTabs = [
+                    ...this.workSpaceTabs,
+                    {
+                        name: "Screen share",
+                        onClick: function(index) {
+                            this.currentTab = index;
+                        }
+                    }
+                ]
+                this.hideAddTabModal();
+            } else {
+                alert("Screen sharing is not supported in this browser.")
+            }
+        }
     }
     
 }

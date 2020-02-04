@@ -10,6 +10,9 @@ import vuetify from './lib/vuetify'
 import VModal from 'vue-js-modal'
 import DatetimePicker from 'vuetify-datetime-picker'
 import VueQrcode from '@chenfengyuan/vue-qrcode';
+import VTooltip from 'v-tooltip'
+
+Vue.use(VTooltip)
 
 Vue.component(VueQrcode.name, VueQrcode);
 
