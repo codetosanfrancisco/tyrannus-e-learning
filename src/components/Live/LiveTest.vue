@@ -31,6 +31,12 @@
                     </v-btn>
 
             </div>
+
+            <div class="screens">
+                <div class="screen-container">
+                    <div class="screen"></div>
+                </div>
+            </div>
         </div>
         <div class="videos">
             <div class="mentor-container">

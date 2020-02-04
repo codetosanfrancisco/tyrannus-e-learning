@@ -1,13 +1,13 @@
 import { OT } from "./constants"
 
 const checkScreenSharing = () => {
-    return OT.checkScreenSharingCapability(function(response) {
+    let support = true;
+    OT.checkScreenSharingCapability(function(response) {
         if(!response.supported || response.extensionRegistered === false) {
-            return false;
-        } else {
-            return true;
+            support = false;
         }
     });
+    return support;
 }
 
 export default checkScreenSharing;
