@@ -186,8 +186,14 @@ export default {
             }
         },
         initializeScreenSharing: function() {
-            initializeScreenSharing(this.session)
-            this.sharingMyScreen = true
+            if(checkScreenSharing()) {
+                initializeScreenSharing(this.session)
+                this.sharingMyScreen = true
+            } else {
+                alert("Screen Sharing is not supported in this browser.")
+            }
+            
+            
         }
     }
     
