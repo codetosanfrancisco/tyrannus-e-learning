@@ -29,6 +29,10 @@
 .workspace
    display: flex
    flex-direction: column
+   height: 100vh
+   +sm
+      height: auto
+
 
 .screens 
    flex-grow: 1
@@ -155,7 +159,7 @@
    background-color: $background-lightgrey
    +sm
       display: grid
-      grid-template-columns: 80% 20%
+      grid-template-columns: 75% 25%
       position: relative
    display: block
 

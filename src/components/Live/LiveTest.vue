@@ -40,7 +40,7 @@
                 </div>
                 <div class="share-my-screen">
                     <v-btn color="green darken-1" tile v-on:click="this.initializeScreenSharing" v-if="!sharingMyScreen">Share my screen</v-btn>
-                    <v-btn color="red darken-1" tile v-on:click="this.sharingMyScreen = false" v-if="sharingMyScreen">End screen sharing</v-btn>
+                    <v-btn color="red darken-1" tile v-on:click="this.stopScreenSharing" v-if="sharingMyScreen">End screen sharing</v-btn>
                 </div>
             </div>
         </div>
@@ -187,13 +187,17 @@ export default {
         },
         initializeScreenSharing: function() {
             if(checkScreenSharing()) {
-                initializeScreenSharing(this.session)
+                this.screenSharingPublisher = initializeScreenSharing(this.session)
                 this.sharingMyScreen = true
             } else {
                 alert("Screen Sharing is not supported in this browser.")
             }
             
             
+        },
+        stopScreenSharing: function() {
+            this.sharingMyScreen = false; 
+            this.session.unpublish(this.screenSharingPublisher)
         }
     }
     

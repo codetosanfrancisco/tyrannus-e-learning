@@ -12,6 +12,7 @@ const initializeScreenSharing = (session) => {
           });
         }
     })
+    return publisher;
 }
 
 export default initializeScreenSharing;
