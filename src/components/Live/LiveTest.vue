@@ -31,13 +31,10 @@
                         {{ item.name }}
                     </v-tab>
                 </v-tabs>
- 
                     <v-btn class="mx-2" fab dark x-small color="blue" v-on:click="this.showAddTabModal">
                         <v-icon dark>add</v-icon>
                     </v-btn>
-
             </div>
-
             <div class="screens">
                 <div class="screen-container">
                     <v-tabs-items v-model="tab">
@@ -56,6 +53,7 @@
                                     <VueSignaturePad
                                         ref="signaturePad"
                                         :options="options"
+                                        id="signaturePad"
                                     />
                                 </div>
                             </div>
@@ -100,6 +98,7 @@ import { getSession } from "@/lib/Live/index";
 import { initializeSession, checkScreenSharing, initializeScreenSharing } from "@/lib/opentok/index"
 import { logoutSession } from "@/lib/mongodb/video-session/index";
 import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
+import { sendDrawing } from "@/lib/mongodb/video-session/drawing/index"
 import io from 'socket.io-client';
 
 export default {
@@ -117,17 +116,22 @@ export default {
             this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor#0");
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor#0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
-            const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}chat-room`);
+            const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`);
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
             });
             socket.on('message', function(data) {
                 self.messages = data;
             });
+            socket.on('drawing', function(data) {
+                window.console.log(data, self.$refs)
+                self.$refs.signaturePad[0].fromData(data);
+            });
             const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role);
             this.publisher = publisher;
             this.session = session;
             this.messages = messageData.data.messages;
+            window.console.log(process.env.NODE_ENV);
         }
         catch(e) {
             alert(e);
@@ -135,6 +139,7 @@ export default {
     },
     data: function() {
         return {
+            isDragging: false,
             publisher: null,
             muted: false,
             see: false,
@@ -159,15 +164,15 @@ export default {
             sharingMyScreen: false,
             options: {
                 dotSize: (0.5 + 2.5) / 2,
-                minWidth: 0.5,
-                maxWidth: 2.5,
+                minWidth: 1,
+                maxWidth: 1,
                 throttle: 10,
                 minDistance: 5,
                 backgroundColor: 'rgba(0,0,0,0)',
                 penColor: 'red',
                 velocityFilterWeight: 0.5,
-                onBegin: () => {},
-                onEnd: () => {}
+                onBegin: this.onBegin,
+                onEnd: this.onEnd
             }
         }
     },
@@ -256,12 +261,21 @@ export default {
             this.screenSharingPublisher.publishVideo(true);
         },
         undo() {
-            window.console.log(this.$refs)
+            window.console.log(this.$refs.signaturePad[0].toData())
             this.$refs.signaturePad[0].undoSignature();
         },
         clear() {
             this.$refs.signaturePad[0].clearSignature();
+        },
+        onBegin() {
+            window.console.log("==Begin==");
+        },
+        onEnd() {
+            window.console.log('=== End ===');
+            window.console.log(this.$refs.signaturePad[0])
+            sendDrawing(this.$refs.signaturePad[0].toData(), 1, this.sessionId)
         }
+        
     },
     computed: {
         activeTabs: function() {
