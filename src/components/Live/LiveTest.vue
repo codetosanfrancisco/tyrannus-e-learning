@@ -15,7 +15,7 @@
             <div class="add-tabs-header">New</div>
              <div class="add-tabs">
                 <div class="add-tab" v-on:click="this.addScreenShare">Screen Share</div>
-                <div class="add-tab" v-on:click="this.hideAddTabModal">Whiteboard</div>
+                <div class="add-tab" v-on:click="this.addWhiteBoard">Whiteboard</div>
                 <div class="add-tab" v-on:click="this.hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
@@ -24,7 +24,13 @@
     <div class="live-container">
         <div class="workspace">
             <div class="tabs">
-                <div v-for="(workSpaceTab, index) in workSpaceTabs" v-bind:key="workSpaceTab.id" class="tab" v-on:click="workSpaceTab.onClick(index)">{{ workSpaceTab.name }}</div>
+                <v-tabs
+                    v-model="tab"
+                >
+                    <v-tab v-for="item in workSpaceTabs" :key="item" class="tab" v-on:click="workSpaceTab.onClick(index)">
+                        {{ item.name }}
+                    </v-tab>
+                </v-tabs>
  
                     <v-btn class="mx-2" fab dark x-small color="blue" v-on:click="this.showAddTabModal">
                         <v-icon dark>add</v-icon>
@@ -34,13 +40,32 @@
 
             <div class="screens">
                 <div class="screen-container">
-                    <div class="screen" id="screen-preview">
-                        
-                    </div>
+                    <v-tabs-items v-model="tab">
+                        <v-tab-item
+                            v-for="item in workSpaceTabs"
+                            :key="item"
+                            class="screen"
+                        >
+                            <div class="screen-children" id="screen-preview" v-if="item.name == 'Screen Share'"></div>
+                            <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'Whiteboard'">
+                                <div class="whiteboard-toolbar">
+                                    <div class="toolbar-item" @click="undo">Undo</div>
+                                    <div class="toolbar-item" @click="clear">Clear</div>
+                                </div>
+                                <div class="signature-pad">
+                                    <VueSignaturePad
+                                        ref="signaturePad"
+                                        :options="options"
+                                    />
+                                </div>
+                            </div>
+                        </v-tab-item>
+                    </v-tabs-items>
                 </div>
                 <div class="share-my-screen">
                     <v-btn color="green darken-1" tile v-on:click="this.initializeScreenSharing" v-if="!sharingMyScreen">Share my screen</v-btn>
-                    <v-btn color="red darken-1" tile v-on:click="this.stopScreenSharing" v-if="sharingMyScreen">End screen sharing</v-btn>
+                    <v-btn color="red darken-1" tile v-on:click="this.stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
+                    <v-btn color="green darken-1" tile v-on:click="this.continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
                 </div>
             </div>
         </div>
@@ -123,14 +148,27 @@ export default {
             zeroMentor: null,
             showEndSession: false,
             showAddTab: false,
-            currentTab: 0,
+            tab: null,
             workSpaceTabs: [{
                 name: "Screen Share",
                 onClick: function(index) {
+                    window.console.log(index)
                     this.currentTab = index;
                 }
             }],
-            sharingMyScreen: false
+            sharingMyScreen: false,
+            options: {
+                dotSize: (0.5 + 2.5) / 2,
+                minWidth: 0.5,
+                maxWidth: 2.5,
+                throttle: 10,
+                minDistance: 5,
+                backgroundColor: 'rgba(0,0,0,0)',
+                penColor: 'red',
+                velocityFilterWeight: 0.5,
+                onBegin: () => {},
+                onEnd: () => {}
+            }
         }
     },
     methods: {
@@ -174,8 +212,9 @@ export default {
                 this.workSpaceTabs = [
                     ...this.workSpaceTabs,
                     {
-                        name: "Screen share",
+                        name: "Screen Share",
                         onClick: function(index) {
+                            window.console.log(index)
                             this.currentTab = index;
                         }
                     }
@@ -197,10 +236,39 @@ export default {
         },
         stopScreenSharing: function() {
             this.sharingMyScreen = false; 
-            this.session.unpublish(this.screenSharingPublisher)
+            //this.session.unpublish(this.screenSharingPublisher);
+            this.screenSharingPublisher.publishVideo(false);
+        },
+        addWhiteBoard: function() {
+            this.workSpaceTabs = [
+                    ...this.workSpaceTabs,
+                    {
+                        name: "Whiteboard",
+                        onClick: function(index) {
+                            window.console.log(this.currentTab)
+                            this.currentTab = index;
+                        }
+                    }
+                ]
+                this.hideAddTabModal();
+        },
+        continueScreenSharing: function() {
+            this.screenSharingPublisher.publishVideo(true);
+        },
+        undo() {
+            window.console.log(this.$refs)
+            this.$refs.signaturePad[0].undoSignature();
+        },
+        clear() {
+            this.$refs.signaturePad[0].clearSignature();
+        }
+    },
+    computed: {
+        activeTabs: function() {
+            window.console.log([this.workSpaceTabs[this.currentTab]])
+            return [this.workSpaceTabs[this.currentTab]]
         }
     }
-    
 }
 </script>
 
