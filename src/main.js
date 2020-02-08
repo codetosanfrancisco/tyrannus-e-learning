@@ -21,7 +21,6 @@ Vue.use(DatetimePicker)
 Vue.use(VModal)
 Vue.use(VueScheduler);
 Vue.component(VueQrcode.name, VueQrcode);
-
 // Vue.use(library) makes the Vue components <router-view> from the library interpretable during runtime
 Vue.config.productionTip = false
 

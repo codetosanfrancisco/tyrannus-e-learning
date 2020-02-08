@@ -16,6 +16,7 @@
              <div class="add-tabs">
                 <div class="add-tab" v-on:click="this.addScreenShare">Screen Share</div>
                 <div class="add-tab" v-on:click="this.addWhiteBoard">Whiteboard</div>
+                <div class="add-tab" v-on:click="this.addEditor">Editor</div>
                 <div class="add-tab" v-on:click="this.hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
@@ -43,27 +44,26 @@
                             :key="item"
                             class="screen"
                         >
-                            <div class="screen-children" id="screen-preview" v-if="item.name == 'Screen Share'"></div>
+                            <div v-if="item.name == 'Screen Share'" style="height: 100%; " class="screen-share">
+                                <div class="screen-children" id="screen-preview" ></div>
+                                 <div class="share-my-screen">
+                                    <v-btn color="green darken-1" tile v-on:click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
+                                    <v-btn color="red darken-1" tile v-on:click="stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
+                                    <v-btn color="green darken-1" tile v-on:click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
+                                </div>
+                            </div>
                             <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'Whiteboard'">
-                                <div class="whiteboard-toolbar">
-                                    <div class="toolbar-item" @click="undo">Undo</div>
-                                    <div class="toolbar-item" @click="clear">Clear</div>
-                                </div>
                                 <div class="signature-pad">
-                                    <VueSignaturePad
-                                        ref="signaturePad"
-                                        :options="options"
-                                        id="signaturePad"
-                                    />
+                                    <drawing-board id="hello" :datas="datas" :email="email" :sessionId="getSessionId"></drawing-board>
                                 </div>
+                            </div>
+                            <div class="screen-children testing" id="screen-preview" v-if="item.name == 'Editor'">
+                                    <quill-editor v-model="content"
+                                                    :options="editorOption">
+                                    </quill-editor>
                             </div>
                         </v-tab-item>
                     </v-tabs-items>
-                </div>
-                <div class="share-my-screen">
-                    <v-btn color="green darken-1" tile v-on:click="this.initializeScreenSharing" v-if="!sharingMyScreen">Share my screen</v-btn>
-                    <v-btn color="red darken-1" tile v-on:click="this.stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
-                    <v-btn color="green darken-1" tile v-on:click="this.continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
                 </div>
             </div>
         </div>
@@ -98,12 +98,22 @@ import { getSession } from "@/lib/Live/index";
 import { initializeSession, checkScreenSharing, initializeScreenSharing } from "@/lib/opentok/index"
 import { logoutSession } from "@/lib/mongodb/video-session/index";
 import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
-import { sendDrawing } from "@/lib/mongodb/video-session/drawing/index"
+import { sendEditorText } from "@/lib/mongodb/video-session/editor/index"
 import io from 'socket.io-client';
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
+import { quillEditor } from 'vue-quill-editor'
+import $ from 'jquery';
+import DrawingBoard from "./DrawingBoard.vue"
+import myEmitter from './events';
+
 
 export default {
     name: "Live",
     components: {
+        quillEditor,
+        DrawingBoard
     },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
@@ -124,14 +134,31 @@ export default {
                 self.messages = data;
             });
             socket.on('drawing', function(data) {
-                window.console.log(data, self.$refs)
-                self.$refs.signaturePad[0].fromData(data);
+                window.console.log(data)
+                 myEmitter.emit('event', data)
+            });
+            socket.on('editortext', function(data) {
+                window.console.log(data);
+                if(self.email !== data.email) {
+                    self.content = data.data;
+                }
             });
             const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role);
             this.publisher = publisher;
             this.session = session;
             this.messages = messageData.data.messages;
-            window.console.log(process.env.NODE_ENV);
+            this.email = self.$store.getters.currentSession.email;
+
+    
+            $(document).on('click', '.quill-editor', function() {
+                window.console.log("Click")
+                sendEditorText(self.content, 1, self.sessionId, self.email)
+            })
+
+             $(document).on('keyup', '.quill-editor', function() {
+                window.console.log("Keyup");
+                sendEditorText(self.content, 1, self.sessionId, self.email)
+            })
         }
         catch(e) {
             alert(e);
@@ -139,6 +166,7 @@ export default {
     },
     data: function() {
         return {
+            datas: [],
             isDragging: false,
             publisher: null,
             muted: false,
@@ -154,25 +182,38 @@ export default {
             showEndSession: false,
             showAddTab: false,
             tab: null,
+            boardNumber: 1,
             workSpaceTabs: [{
-                name: "Screen Share",
-                onClick: function(index) {
-                    window.console.log(index)
-                    this.currentTab = index;
-                }
-            }],
+                name: "Screen Share"
+            }
+            ],
             sharingMyScreen: false,
-            options: {
-                dotSize: (0.5 + 2.5) / 2,
-                minWidth: 1,
-                maxWidth: 1,
-                throttle: 10,
-                minDistance: 5,
-                backgroundColor: 'rgba(0,0,0,0)',
-                penColor: 'red',
-                velocityFilterWeight: 0.5,
-                onBegin: this.onBegin,
-                onEnd: this.onEnd
+            //Menu
+            data: null,
+            content: null,
+            previousData: '',
+            editorOption: {
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+                        ['blockquote', 'code-block'],
+
+                        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+                        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+                        [{ 'direction': 'rtl' }],                         // text direction
+
+                        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+                        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+                        [{ 'font': [] }],
+                        [{ 'align': [] }],
+
+                        ['clean']                                         // remove formatting button
+                    ]
+                }
             }
         }
     },
@@ -260,32 +301,35 @@ export default {
         continueScreenSharing: function() {
             this.screenSharingPublisher.publishVideo(true);
         },
-        undo() {
-            window.console.log(this.$refs.signaturePad[0].toData())
-            this.$refs.signaturePad[0].undoSignature();
-        },
-        clear() {
-            this.$refs.signaturePad[0].clearSignature();
-        },
-        onBegin() {
-            window.console.log("==Begin==");
-        },
-        onEnd() {
-            window.console.log('=== End ===');
-            window.console.log(this.$refs.signaturePad[0])
-            sendDrawing(this.$refs.signaturePad[0].toData(), 1, this.sessionId)
+        addEditor: function() {
+            this.workSpaceTabs = [
+                    ...this.workSpaceTabs,
+                    {
+                        name: "Editor",
+                        onClick: function(index) {
+                            window.console.log(this.currentTab)
+                            this.currentTab = index;
+                        }
+                    }
+                ]
+            this.hideAddTabModal();
         }
-        
     },
     computed: {
         activeTabs: function() {
             window.console.log([this.workSpaceTabs[this.currentTab]])
             return [this.workSpaceTabs[this.currentTab]]
+        },
+        getSessionId() {
+            return this.sessionId
         }
-    }
+    },
+    beforeDestroy() {
+        this.editor.destroy()
+    },
 }
 </script>
 
-<style scoped lang="sass">
+<style lang="sass">
     @import "../../assets/sass/Live/LiveTest.sass"
 </style>
