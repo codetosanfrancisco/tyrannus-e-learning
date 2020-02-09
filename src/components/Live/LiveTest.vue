@@ -23,7 +23,7 @@
         </v-card>
     </v-dialog>
     <div class="live-container">
-        <div class="workspace">
+        <div v-bind:class="{workspace: true, 'disable-pointer-event': !isMentor }">
             <div class="tabs">
                 <v-tabs
                     v-model="tab"
@@ -121,7 +121,7 @@ export default {
             const self = this;
             this.sessionId = this.$route.params.id;
             const { data: { token, sessionData: { mentors, mentees, sessionId } }} = await getSession(this.sessionId);
-            window.console.log(mentors,mentees, sessionId)
+            window.console.log(mentors,mentees, sessionId, token)
             this.menteesRole = mentees;
             this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor#0");
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor#0")[0];
@@ -134,8 +134,8 @@ export default {
                 self.messages = data;
             });
             socket.on('drawing', function(data) {
-                window.console.log(data)
-                 myEmitter.emit('event', data)
+                window.console.log("Drawing",data)
+                myEmitter.emit('event', data)
             });
             socket.on('editortext', function(data) {
                 window.console.log(data);
@@ -322,6 +322,9 @@ export default {
         },
         getSessionId() {
             return this.sessionId
+        },
+        isMentor() {
+            return this.$store.getters.currentSession.email == "mentor1@gmail.com"
         }
     },
     beforeDestroy() {
