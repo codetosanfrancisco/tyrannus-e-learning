@@ -422,6 +422,11 @@ export default {
             this.draw.getLayer().batchDraw();
             sendDrawing(this.draw.getStage().toJSON(), 1, this.sessionId,this.email)
         }
+    },
+    computed: {
+        isMentor() {
+            
+        }
     }
 }
 </script>

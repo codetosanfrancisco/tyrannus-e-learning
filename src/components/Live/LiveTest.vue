@@ -23,12 +23,18 @@
         </v-card>
     </v-dialog>
     <div class="live-container">
-        <div v-bind:class="{workspace: true, 'disable-pointer-event': !isMentor }">
+        <div v-bind:class="{workspace: true }">
+            <v-overlay
+                :absolute="true"
+                :value="isMentor ? false : true"
+                color="transparent"
+            >
+            </v-overlay>
             <div class="tabs">
                 <v-tabs
-                    v-model="tab"
+                    v-model="active_tab"
                 >
-                    <v-tab v-for="item in workSpaceTabs" :key="item" class="tab" v-on:click="workSpaceTab.onClick(index)">
+                    <v-tab v-for="(item, index) in workSpaceTabs" :key="index" class="tab">
                         {{ item.name }}
                     </v-tab>
                 </v-tabs>
@@ -38,7 +44,7 @@
             </div>
             <div class="screens">
                 <div class="screen-container">
-                    <v-tabs-items v-model="tab">
+                    <v-tabs-items v-model="active_tab">
                         <v-tab-item
                             v-for="item in workSpaceTabs"
                             :key="item"
@@ -99,6 +105,7 @@ import { initializeSession, checkScreenSharing, initializeScreenSharing } from "
 import { logoutSession } from "@/lib/mongodb/video-session/index";
 import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
 import { sendEditorText } from "@/lib/mongodb/video-session/editor/index"
+import { sendNewTab, sendSwapTab } from "@/lib/mongodb/video-session/tab/index"
 import io from 'socket.io-client';
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
@@ -140,9 +147,27 @@ export default {
             socket.on('editortext', function(data) {
                 window.console.log(data);
                 if(self.email !== data.email) {
-                    self.content = data.data;
+                    self.content = data.data
                 }
             });
+            socket.on('new-tab', function(data) {
+                if(self.email !== data.email) {
+                    self.workSpaceTabs = [
+                        ...self.workSpaceTabs,
+                        {
+                            name: data.name,
+                        }
+                    ]
+                    self.active_tab = self.workSpaceTabs.length - 1
+                }
+            })
+
+            socket.on('tab-swap', function(data) {
+                if(self.email !== data.email) {
+                    self.active_tab = data.index;
+                }
+            })
+
             const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role);
             this.publisher = publisher;
             this.session = session;
@@ -151,11 +176,13 @@ export default {
 
     
             $(document).on('click', '.quill-editor', function() {
+                if(!this.isMentor) return
                 window.console.log("Click")
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
 
              $(document).on('keyup', '.quill-editor', function() {
+                 if(!this.isMentor) return
                 window.console.log("Keyup");
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
@@ -181,10 +208,10 @@ export default {
             zeroMentor: null,
             showEndSession: false,
             showAddTab: false,
-            tab: null,
+            active_tab: null,
             boardNumber: 1,
             workSpaceTabs: [{
-                name: "Screen Share"
+                name: "Screen Share",
             }
             ],
             sharingMyScreen: false,
@@ -229,15 +256,19 @@ export default {
             }
         },
         showEndSessionModal () {
+            if(!this.isMentor) return
             this.showEndSession = true;
         },
         hideEndSessionModal () {
+            if(!this.isMentor) return
             this.showEndSession = false;
         },
         showAddTabModal () {
+            if(!this.isMentor) return
             this.showAddTab = true;
         },
         hideAddTabModal () {
+            if(!this.isMentor) return
             this.showAddTab = false;
         },
         endSession: async function() {
@@ -254,23 +285,23 @@ export default {
             }
         },
         addScreenShare: function() {
+            if(!this.isMentor) return
             if(checkScreenSharing()) {
                 this.workSpaceTabs = [
                     ...this.workSpaceTabs,
                     {
-                        name: "Screen Share",
-                        onClick: function(index) {
-                            window.console.log(index)
-                            this.currentTab = index;
-                        }
+                        name: "Screen Share"
                     }
                 ]
                 this.hideAddTabModal();
+                this.setActiveTab();
+                this.sendNewTab("Screen Share");
             } else {
                 alert("Screen sharing is not supported in this browser.")
             }
         },
         initializeScreenSharing: function() {
+            if(!this.isMentor) return
             if(checkScreenSharing()) {
                 this.screenSharingPublisher = initializeScreenSharing(this.session)
                 this.sharingMyScreen = true
@@ -281,39 +312,51 @@ export default {
             
         },
         stopScreenSharing: function() {
+            if(!this.isMentor) return
             this.sharingMyScreen = false; 
             //this.session.unpublish(this.screenSharingPublisher);
             this.screenSharingPublisher.publishVideo(false);
         },
         addWhiteBoard: function() {
+            if(!this.isMentor) return
             this.workSpaceTabs = [
                     ...this.workSpaceTabs,
                     {
                         name: "Whiteboard",
-                        onClick: function(index) {
-                            window.console.log(this.currentTab)
-                            this.currentTab = index;
-                        }
                     }
                 ]
                 this.hideAddTabModal();
+                this.setActiveTab();
+                this.sendNewTab("Whiteboard")
         },
         continueScreenSharing: function() {
+            if(!this.isMentor) return
             this.screenSharingPublisher.publishVideo(true);
         },
         addEditor: function() {
+            if(!this.isMentor) return
             this.workSpaceTabs = [
                     ...this.workSpaceTabs,
                     {
                         name: "Editor",
-                        onClick: function(index) {
-                            window.console.log(this.currentTab)
-                            this.currentTab = index;
-                        }
                     }
                 ]
             this.hideAddTabModal();
-        }
+            this.sendNewTab("Editor")
+            this.setActiveTab();
+        },
+        setActiveTab: function() {
+            if(!this.isMentor) return
+            this.active_tab = this.workSpaceTabs.length - 1;
+        },
+        sendNewTab: function(tabName) {
+            if(!this.isMentor) return
+            sendNewTab(tabName, this.sessionId, this.email);
+        },
+        handleTabChange: function(i) {
+            if(!this.isMentor) return
+            sendSwapTab(i, this.sessionId, this.email)
+        },
     },
     computed: {
         activeTabs: function() {
@@ -325,6 +368,11 @@ export default {
         },
         isMentor() {
             return this.$store.getters.currentSession.email == "mentor1@gmail.com"
+        }
+    },
+    watch: {
+        active_tab: function() {
+            this.handleTabChange(this.active_tab)
         }
     },
     beforeDestroy() {

@@ -56,7 +56,8 @@ export default {
              valid: false,
              email: '',
              password: '',
-             subdomain: ''
+             subdomain: '',
+             check: false
         }
     },
     methods: {
