@@ -13,7 +13,13 @@ import VueQrcode from '@chenfengyuan/vue-qrcode';
 import VTooltip from 'v-tooltip'
 import VueSignaturePad from 'vue-signature-pad';
 import VueScheduler from 'v-calendar-scheduler';
+
+// CSS Import
 import 'v-calendar-scheduler/lib/main.css';
+import 'hover.css/css/hover.css'
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
  
 Vue.use(VueSignaturePad);
 Vue.use(VTooltip)

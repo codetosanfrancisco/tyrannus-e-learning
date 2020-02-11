@@ -1,6 +1,13 @@
 @import "../shared/mobile-responsive.sass"
 @import "../shared/color.sass"
 
+.mentee-control-buttons
+   display: flex
+   align-items: center
+   justify-content: center
+   height: 100%
+   flex-direction: column
+
 .canvas 
    flex-grow: 1
 
@@ -201,18 +208,27 @@
    overflow: scroll
    height: 20%
 
+.video-label-email
+   margin-top: 20px
 
-.label-email 
-   position: absolute
-   top: 50%
-   left: 50%
-   font-size: 0.8em
-   transform: translate(-50%,-50%)
-   color: white
-   padding: 5px
+.video-label
    display: none
+   position: absolute
+   // top: 50%
+   // left: 50%
+   font-size: 0.8em
+   //background-color: $background-darkgrey
+   color: $background-white
+   // transform: translate(-50%,-50%)
+   // color: white
+   // padding: 5px
+   // display: none
    background-color: rgba(0,0,0,0.5)
-   border: 0
+   // border: 0
+   top: 0
+   bottom: 0
+   left: 0
+   right: 0
    z-index: 10
 
 
@@ -283,7 +299,7 @@
    margin: 1px
 
 
-.mentee:hover > .label-email 
+.mentee:hover > .video-label
    display: block
 
 

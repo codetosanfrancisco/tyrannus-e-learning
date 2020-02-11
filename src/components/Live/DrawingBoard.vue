@@ -81,7 +81,7 @@
 
 <script>
 import { sendDrawing } from "@/lib/mongodb/video-session/drawing/index"
-import myEmitter from "./events";
+import myEmitter from "./resources/events";
 import Konva from "konva";
 
 class Draw {

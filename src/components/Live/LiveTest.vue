@@ -52,7 +52,7 @@
                         >
                             <div v-if="item.name == 'Screen Share'" style="height: 100%; " class="screen-share">
                                 <div class="screen-children" id="screen-preview" ></div>
-                                 <div class="share-my-screen">
+                                 <div class="share-my-screen" v-if="isMentor">
                                     <v-btn color="green darken-1" tile v-on:click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
                                     <v-btn color="red darken-1" tile v-on:click="stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
                                     <v-btn color="green darken-1" tile v-on:click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
@@ -80,14 +80,21 @@
                 </div>
             </div>
             <div class="mentees-container">
-                <div v-for="item in menteesRole" v-bind:key="item" :id="item.role" class="mentee"><div class="label-email">{{ item.email }}</div></div>
+                <div v-for="item in menteesRole" v-bind:key="item" :id="item.role" class="mentee">
+                    <div class="video-label">
+                        <div class="mentee-control-buttons">
+                            <v-btn color="white" fab v-if="isMentor" @click="this.turnMenteeOn(item.role)"><v-icon class="video-call" dark>mic_off</v-icon></v-btn>
+                            <div class="video-label-email">{{ item.email }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="videos-control-buttons">
                 <div class="video-control-buttons-other">
                     <v-btn v-if="!see" v-on:click="publisher.publishVideo(false); see = true" dark class="control-button"><v-icon class="video-call">videocam</v-icon></v-btn>
                     <v-btn v-if="see" v-on:click="publisher.publishVideo(true); see = false" dark class="control-button"><v-icon class="video-call">videocam_off</v-icon></v-btn>
-                    <v-btn v-if="!muted" dark class="control-button" v-on:click="publisher.publishAudio(false); muted = true"><v-icon class="voice-call">mic</v-icon></v-btn>
-                    <v-btn v-if="muted" dark class="control-button" v-on:click="publisher.publishAudio(true); muted = false"><v-icon class="voice-call">mic_off</v-icon></v-btn>
+                    <v-btn v-if="!muted" dark class="control-button" v-on:click="this.muteButton"><v-icon class="voice-call">mic</v-icon></v-btn>
+                    <v-btn v-if="muted" dark class="control-button" v-on:click="this.unmuteButton"><v-icon class="voice-call">mic_off</v-icon></v-btn>
                     <!-- <v-btn dark class="control-button"><v-icon class="full-screen">fullscreen</v-icon></v-btn> -->
                 </div>
                 <div class="video-control-buttons-end">
@@ -107,13 +114,11 @@ import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
 import { sendEditorText } from "@/lib/mongodb/video-session/editor/index"
 import { sendNewTab, sendSwapTab } from "@/lib/mongodb/video-session/tab/index"
 import io from 'socket.io-client';
-import 'quill/dist/quill.core.css'
-import 'quill/dist/quill.snow.css'
-import 'quill/dist/quill.bubble.css'
 import { quillEditor } from 'vue-quill-editor'
 import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
-import myEmitter from './events';
+import myEmitter from './resources/events';
+import { turnMenteeOn } from "@/lib/mongodb/video-session/audio/index"
 
 
 export default {
@@ -130,8 +135,8 @@ export default {
             const { data: { token, sessionData: { mentors, mentees, sessionId } }} = await getSession(this.sessionId);
             window.console.log(mentors,mentees, sessionId, token)
             this.email = self.$store.getters.currentSession.email;
-            this.menteesRole = mentees.filter(mentee => mentee.active == true && mentee.email != this.email);
-            this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor-0");
+            this.role = self.$store.getters.currentSession.role;
+            this.menteesRole = mentees.filter(mentee => mentee.active == true && mentee.email != this.email).map(mentee => { return {role: mentee.role, email: mentee.email} });
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`);
@@ -168,9 +173,18 @@ export default {
                     self.active_tab = data.index;
                 }
             })
-            const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role, document.getElementsByClassName('mentees-container')[0], this.email);
-            this.publisher = publisher;
-            this.session = session;
+
+
+            initializeSession(self, token, sessionId, function(publisher, session) {
+                self.publisher = publisher;
+                self.session = session;
+
+                if(!self.isMentor) {
+                    publisher.publishAudio(false);
+                    self.muted = true;
+                }
+            });
+            
             this.messages = messageData.data.messages;
 
             $(document).on('click', '.quill-editor', function() {
@@ -353,6 +367,25 @@ export default {
             if(!this.isMentor) return
             sendSwapTab(i, this.sessionId, this.email)
         },
+        muteButton: function() {
+            this.publisher.publishAudio(false); 
+            this.muted = true
+        },
+        unmuteButton: function() {
+            if(!this.isMentor) return
+            this.publisher.publishAudio(true); 
+            this.muted = false;
+        },
+        addMentee: function(role, email) {
+            window.console.log("this.menteesRole", this.menteesRole)
+            this.menteesRole = [...this.menteesRole, { role, email}]
+        },
+        removeMentee: function(role, email) {
+            this.menteesRole = this.menteesRole.filter(mentee => mentee.role == role && mentee.email == email);
+        },
+        turnMenteeOn: function(role) {
+            turnMenteeOn(role);
+        }
     },
     computed: {
         activeTabs: function() {
