@@ -40,7 +40,8 @@ const initializeSession = (self, token, sessionId, cb) => {
 
         session.on('streamCreated', function(event) {
             var [roleMentee, emailMentee] = event.stream.name.split(" ");
-            if(role !== 'mentor-0' && !document.getElementById(role)) {
+            window.console.log(roleMentee, emailMentee)
+            if(roleMentee !== 'mentor-0' && !document.getElementById(roleMentee)) {
                 addMentee(roleMentee, emailMentee);
             }
             Vue.nextTick(function() {

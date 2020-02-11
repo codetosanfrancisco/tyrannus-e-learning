@@ -15,8 +15,8 @@
         <div v-on:click="draw" v-on="on" class="toolbar-item"><i class="material-icons white-icon">color_lens</i></div>
         </template>
         <div class="toolbar-item-menu">
-            <div v-for="(color,index) in colors" v-bind:key="color" class="item">
-                <div v-on:click="setColor(index)" v-bind:style='{ backgroundColor: color, width: "30px", height: "30px", borderRadius: "30px" }' class="item"></div>
+            <div v-for="(color,index) in colors" v-bind:key="color" class="item" v-on:click="setColor(index)">
+                <div  v-bind:style='{ backgroundColor: color, width: "30px", height: "30px", borderRadius: "30px" }' class="item"></div>
             </div>
         </div>
       </v-menu>
@@ -151,7 +151,7 @@ class Draw {
                 stroke: self.color,
                 strokeWidth: self.width,
                 globalCompositeOperation:
-                self.mode === 'brush' ? 'source-over' : 'destination-out',
+                self.mode == 'brush' ? 'source-over' : 'destination-out',
                 points: [pos.x, pos.y]
             });
             self.layer.add(self.lastLine);
@@ -229,6 +229,10 @@ export default {
         setPenSize(index) {
             if(!this.isMentor) return
             this.draw.setWidth(this.penSizes[index]);
+        },
+        activatePen() {
+            if(!this.isMentor) return
+            this.draw.setMode("brush")
         },
         activateEraser() {
             if(!this.isMentor) return

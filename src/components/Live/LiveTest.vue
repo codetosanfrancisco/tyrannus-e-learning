@@ -14,14 +14,22 @@
         <v-card>
             <div class="add-tabs-header">New</div>
              <div class="add-tabs">
-                <div class="add-tab" v-on:click="this.addScreenShare">Screen Share</div>
-                <div class="add-tab" v-on:click="this.addWhiteBoard">Whiteboard</div>
-                <div class="add-tab" v-on:click="this.addEditor">Editor</div>
-                <div class="add-tab" v-on:click="this.hideAddTabModal">Cancel</div>
+                <div class="add-tab" @click="addScreenShare">Screen Share</div>
+                <div class="add-tab" @click="addWhiteBoard">Whiteboard</div>
+                <div class="add-tab" @click="addEditor">Editor</div>
+                <div class="add-tab" @click="hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
         </v-card>
     </v-dialog>
+    <div class="live-navbar">
+        <div v-if="isMentor">
+            Lecturer Portal - Management - Prof Dr. Paul Cheng
+        </div>
+        <div v-else>
+            Student Portal - Management - David Lin
+        </div>
+    </div>
     <div class="live-container">
         <div v-bind:class="{workspace: true }">
             <v-overlay
@@ -38,7 +46,7 @@
                         {{ item.name }}
                     </v-tab>
                 </v-tabs>
-                    <v-btn class="mx-2" fab dark x-small color="blue" v-on:click="this.showAddTabModal">
+                    <v-btn class="mx-2" fab dark x-small color="blue" @click="showAddTabModal">
                         <v-icon dark>add</v-icon>
                     </v-btn>
             </div>
@@ -53,9 +61,9 @@
                             <div v-if="item.name == 'Screen Share'" style="height: 100%; " class="screen-share">
                                 <div class="screen-children" id="screen-preview" ></div>
                                  <div class="share-my-screen" v-if="isMentor">
-                                    <v-btn color="green darken-1" tile v-on:click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
-                                    <v-btn color="red darken-1" tile v-on:click="stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
-                                    <v-btn color="green darken-1" tile v-on:click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
+                                    <v-btn color="green darken-1" tile @click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
+                                    <v-btn color="red darken-1" tile @click="stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
+                                    <v-btn color="green darken-1" tile @click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
                                 </div>
                             </div>
                             <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'Whiteboard'">
@@ -64,7 +72,7 @@
                                 </div>
                             </div>
                             <div class="screen-children testing" id="screen-preview" v-if="item.name == 'Editor'">
-                                    <quill-editor v-model="content"
+                                    <quill-editor v-model="content" ref="myQuillEditor"
                                                     :options="editorOption">
                                     </quill-editor>
                             </div>
@@ -83,7 +91,8 @@
                 <div v-for="item in menteesRole" v-bind:key="item" :id="item.role" class="mentee">
                     <div class="video-label">
                         <div class="mentee-control-buttons">
-                            <v-btn color="white" fab v-if="isMentor" @click="this.turnMenteeOn(item.role)"><v-icon class="video-call" dark>mic_off</v-icon></v-btn>
+                            <v-btn color="white" fab v-if="isMentor && item.mute" @click="turnMenteeOn(item.role)"><v-icon class="video-call" dark>mic_off</v-icon></v-btn>
+                            <v-btn color="white" fab v-if="isMentor && !item.mute" @click="turnMenteeOff(item.role)"><v-icon class="video-call" dark>mic</v-icon></v-btn>
                             <div class="video-label-email">{{ item.email }}</div>
                         </div>
                     </div>
@@ -118,7 +127,7 @@ import { quillEditor } from 'vue-quill-editor'
 import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
 import myEmitter from './resources/events';
-import { turnMenteeOn } from "@/lib/mongodb/video-session/audio/index"
+import { turnMenteeOn, turnMenteeOff } from "@/lib/mongodb/video-session/audio/index"
 
 
 export default {
@@ -136,10 +145,20 @@ export default {
             window.console.log(mentors,mentees, sessionId, token)
             this.email = self.$store.getters.currentSession.email;
             this.role = self.$store.getters.currentSession.role;
-            this.menteesRole = mentees.filter(mentee => mentee.active == true && mentee.email != this.email).map(mentee => { return {role: mentee.role, email: mentee.email} });
+            this.menteesRole = mentees.filter(mentee => mentee.active == true && mentee.email != this.email).map(mentee => { return {role: mentee.role, email: mentee.email, mute: true} });
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
-            const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`);
+            const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
+            initializeSession(self, token, sessionId, function(publisher, session) {
+                self.publisher = publisher;
+                self.session = session;
+
+                if(!self.isMentor) {
+                    self.publisher.publishAudio(false);
+                    self.muted = true;
+                }
+            });
+            
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
             });
@@ -165,6 +184,10 @@ export default {
                         }
                     ]
                     self.active_tab = self.workSpaceTabs.length - 1
+
+                    if(data.name == 'Editor') {
+                        this.editor.focus();
+                    }
                 }
             })
 
@@ -174,28 +197,32 @@ export default {
                 }
             })
 
+            socket.on('turn-mentee-on', function(data) {
+                window.console.log(data)
+                if(data.role == self.role) {
+                    window.console.log(data)
+                    self.publisher.publishAudio(true);
+                    self.muted = false;
+                }
+            })
 
-            initializeSession(self, token, sessionId, function(publisher, session) {
-                self.publisher = publisher;
-                self.session = session;
-
-                if(!self.isMentor) {
-                    publisher.publishAudio(false);
+            socket.on('turn-mentee-off', function(data) {
+                window.console.log(data)
+                if(data.role == self.role) {
+                    self.publisher.publishAudio(false);
                     self.muted = true;
                 }
-            });
+            })
             
             this.messages = messageData.data.messages;
 
             $(document).on('click', '.quill-editor', function() {
-                if(!this.isMentor) return
-                window.console.log("Click")
+                if(!self.isMentor) return
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
 
              $(document).on('keyup', '.quill-editor', function() {
-                 if(!this.isMentor) return
-                window.console.log("Keyup");
+                 if(!self.isMentor) return
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
         }
@@ -378,13 +405,28 @@ export default {
         },
         addMentee: function(role, email) {
             window.console.log("this.menteesRole", this.menteesRole)
-            this.menteesRole = [...this.menteesRole, { role, email}]
+            this.menteesRole = [...this.menteesRole, { role, email, mute: true}]
         },
         removeMentee: function(role, email) {
             this.menteesRole = this.menteesRole.filter(mentee => mentee.role == role && mentee.email == email);
         },
         turnMenteeOn: function(role) {
-            turnMenteeOn(role);
+            let menteeNum = this.menteesRole.findIndex(mentee => mentee.role == role);
+            let mentee = this.menteesRole[menteeNum];
+            mentee.mute = false;
+            let mentees = this.menteesRole;
+            mentees[menteeNum] = mentee;
+            this.menteesRole = mentees;
+            turnMenteeOn(role, this.sessionId);
+        },
+        turnMenteeOff: function(role) {
+            let menteeNum = this.menteesRole.findIndex(mentee => mentee.role == role);
+            let mentee = this.menteesRole[menteeNum];
+            mentee.mute = true;
+            let mentees = this.menteesRole;
+            mentees[menteeNum] = mentee;
+            this.menteesRole = mentees;
+           turnMenteeOff(role, this.sessionId);
         }
     },
     computed: {
