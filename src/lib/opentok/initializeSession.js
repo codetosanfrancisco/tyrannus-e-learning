@@ -51,7 +51,7 @@ const initializeSession = (self, token, sessionId, cb) => {
 
         session.on('streamDestroyed', function(e) {
             var [roleMentee, emailMentee] = e.stream.name.split(" ");
-            if(e.stream.name !== 'mentor-0') {
+            if(roleMentee !== 'mentor-0') {
                 removeMentee(roleMentee, emailMentee);
             }
         })

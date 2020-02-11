@@ -407,8 +407,8 @@ export default {
             window.console.log("this.menteesRole", this.menteesRole)
             this.menteesRole = [...this.menteesRole, { role, email, mute: true}]
         },
-        removeMentee: function(role, email) {
-            this.menteesRole = this.menteesRole.filter(mentee => mentee.role !== role && mentee.email !== email);
+        removeMentee: function(role) {
+            this.menteesRole = this.menteesRole.filter(mentee => mentee.role !== role);
         },
         turnMenteeOn: function(role) {
             let menteeNum = this.menteesRole.findIndex(mentee => mentee.role == role);
