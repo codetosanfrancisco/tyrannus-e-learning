@@ -408,7 +408,7 @@ export default {
             this.menteesRole = [...this.menteesRole, { role, email, mute: true}]
         },
         removeMentee: function(role, email) {
-            this.menteesRole = this.menteesRole.filter(mentee => mentee.role == role && mentee.email == email);
+            this.menteesRole = this.menteesRole.filter(mentee => mentee.role !== role && mentee.email !== email);
         },
         turnMenteeOn: function(role) {
             let menteeNum = this.menteesRole.findIndex(mentee => mentee.role == role);
