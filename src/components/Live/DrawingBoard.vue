@@ -84,178 +84,6 @@ import { sendDrawing } from "@/lib/mongodb/video-session/drawing/index"
 import myEmitter from "./events";
 import Konva from "konva";
 
-// class Draw {
-//     constructor(c, app, cursor, email, sessionId){
-//         this.c = c;
-//         this.ctx = this.c.getContext('2d');
-//         this.app = app;
-//         this.cursor = cursor
-//         this.email = email
-//         this.sessionId = sessionId
-        
-//         this.mouseDown = false;
-//         this.mouseX = 0;
-//         this.mouseY = 0;
-        
-//         this.tempHistory = [];
-        
-//         this.setSize();
-        
-//         this.listen();
-        
-//         this.redraw();
-//     }
-    
-//     listen(){
-//         this.c.addEventListener('mousedown', (e)=>{
-//             window.console.log("mousedown")
-//             this.mouseDown = true;
-//             this.mouseX = e.offsetX;
-//             this.mouseY = e.offsetY;
-//             this.setDummyPoint();
-//         });
-        
-//         this.c.addEventListener('mouseup', ()=>{
-//             if(this.mouseDown){
-//                 this.setDummyPoint();
-//                 sendDrawing(this.app.history, 1, this.sessionId,this.email)
-//             }
-//             this.mouseDown = false;
-//         });
-        
-//         this.c.addEventListener('mouseleave', ()=>{
-//             if(this.mouseDown){
-//                 this.setDummyPoint();
-//             }
-//             this.mouseDown = false;
-//         });
-        
-//         this.c.addEventListener('mousemove', (e)=>{
-//             this.moveMouse(e);
-            
-//             if(this.mouseDown){
-//                 this.mouseX = this.mouseX;
-//                 this.mouseY = this.mouseY;
-                
-//                 if(!this.app.options.restrictX){
-//                     this.mouseX = e.offsetX;
-//                 }
-                
-//                 if(!this.app.options.restrictY){
-//                     this.mouseY = e.offsetY;
-//                 }
-                                
-//                 var item = {
-//                     isDummy: false,
-//                     x: this.mouseX,
-//                     y: this.mouseY,
-//                     c: this.app.color,
-//                     r: this.app.size
-//                 };
-                
-//                 this.app.history.push(item);
-//                 this.draw(item, this.app.history.length);
-
-//             }
-//         });
-        
-//         window.addEventListener('resize', ()=>{
-//             this.setSize();
-//             this.redraw();
-//         });
-//     }
-    
-//     setSize(){
-//         this.c.width = window.innerWidth;
-//         this.c.height = window.innerHeight - 60;
-//     }
-    
-//     moveMouse(e){
-//         let x = e.offsetX;
-//         let y = e.offsetY;
-        
-//         this.cursor.style.transform = `translate(${x - 10}px, ${y - 10}px)`;
-//     }
-    
-//     getDummyItem(){
-//         var lastPoint = this.app.history[this.app.history.length-1];
-//         window.console.log("LastPoint", lastPoint)
-        
-//         return {
-//             isDummy: true,
-//             x: lastPoint.x,
-//             y: lastPoint.y,
-//             c: null,
-//             r: null
-//         };
-//     }
-    
-//     setDummyPoint(){
-//         var item = this.getDummyItem();
-//         this.app.history.push(item);
-//         this.draw(item, this.app.history.length);
-//     }
-    
-//     redraw(){
-//         this.ctx.clearRect(0, 0, this.c.width, this.c.height);
-//         this.drawBgDots()
-
-//         if(!this.app.history.length){
-//             return true;
-//         }
-        
-//         this.app.history.forEach((item, i)=>{
-//             this.draw(item, i);
-//         });
-//     }
-    
-//     drawBgDots(){
-//         var gridSize = 50;
-//         this.ctx.fillStyle = 'rgba(0, 0, 0, .2)';
-        
-//         for(var i = 0; i*gridSize < this.c.width; i++){
-//             for(var j = 0; j*gridSize < this.c.height; j++){
-//                 if(i > 0 && j > 0){
-//                     this.ctx.beginPath();
-//                     this.ctx.rect(i * gridSize, j * gridSize, 2, 2);
-//                     this.ctx.fill();
-//                     this.ctx.closePath();
-//                 }
-//             }
-//         }
-//     }
-    
-//     draw(item, i){
-//         this.ctx.lineCap = 'round';
-//         this.ctx.lineJoin = "round";
-        
-//         var prevItem = this.app.history[i-2];
-                
-//         if(i < 2){
-//             return false;
-//         }
-
-//         if(!item.isDummy && !this.app.history[i-1].isDummy && !prevItem.isDummy){
-//             this.ctx.strokeStyle = item.c;
-//             this.ctx.lineWidth = item.r;
-//             this.ctx.beginPath();
-//             this.ctx.moveTo(prevItem.x, prevItem.y);
-//             this.ctx.lineTo(item.x, item.y);
-//             this.ctx.stroke();
-//             this.ctx.closePath();
-//         } else if (!item.isDummy) {			
-//             this.ctx.strokeStyle = item.c;
-//             this.ctx.lineWidth = item.r;
-//             this.ctx.beginPath();
-//             this.ctx.moveTo(item.x, item.y);
-//             this.ctx.lineTo(item.x, item.y);
-//             this.ctx.stroke();
-//             this.ctx.closePath();
-//         }
-//     }
-// }
-
-
 class Draw {
 
     setMode(mode) {
@@ -330,12 +158,14 @@ class Draw {
         });
 
         this.stage.on('mouseup touchend', function() {
+            if(self.email !== "mentor1@gmail.com") return
             sendDrawing(self.stage.toJSON(),1, self.sessionId, self.email)
             self.isPaint = false;
         });
 
         // and core function - drawing
         this.stage.on('mousemove touchmove', function() {
+            if(self.email !== "mentor1@gmail.com") return
             if (!self.isPaint) {
             return;
             }
@@ -386,15 +216,6 @@ export default {
             }
         },
     mounted() {
-        // this.draw = new Draw(document.getElementById(this.id), this, document.getElementById('cursor'), this.email, this.sessionId)
-        // myEmitter.on('event', (data) => {
-        //     window.console.log("Latata", data);
-        //     if(data.email !== this.email) {
-        //         this.history = [];
-        //         this.history = data.data;
-        //         this.draw.redraw()
-        //     }
-        // })
         this.draw = new Draw(this.id, this.sessionId, this.email);
          myEmitter.on('event', (data) => {
             window.console.log("Latata", data);
@@ -406,18 +227,23 @@ export default {
     },
     methods: {
         setPenSize(index) {
+            if(!this.isMentor) return
             this.draw.setWidth(this.penSizes[index]);
         },
         activateEraser() {
+            if(!this.isMentor) return
             this.draw.setMode("eraser")
         },
         setEraserSize(index) {
+            if(!this.isMentor) return
             this.draw.setWidth(this.eraserSize[index]);
         },
         setColor(index) {
+            if(!this.isMentor) return
             this.draw.setColor(this.colors[index]);
         },
         clearCanvas() {
+            if(!this.isMentor) return
             this.draw.getLayer().destroyChildren();
             this.draw.getLayer().batchDraw();
             sendDrawing(this.draw.getStage().toJSON(), 1, this.sessionId,this.email)
@@ -425,7 +251,7 @@ export default {
     },
     computed: {
         isMentor() {
-            
+            return this.email == "mentor1@gmail.com"
         }
     }
 }

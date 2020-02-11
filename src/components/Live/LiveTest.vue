@@ -75,7 +75,7 @@
         </div>
         <div class="videos">
             <div class="mentor-container">
-                <div id="mentor#0" class="mentor">
+                <div id="mentor-0" class="mentor">
                     <div class="zero-mentor-label">{{ zeroMentor.email }}</div>
                 </div>
             </div>
@@ -129,9 +129,10 @@ export default {
             this.sessionId = this.$route.params.id;
             const { data: { token, sessionData: { mentors, mentees, sessionId } }} = await getSession(this.sessionId);
             window.console.log(mentors,mentees, sessionId, token)
-            this.menteesRole = mentees;
-            this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor#0");
-            this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor#0")[0];
+            this.email = self.$store.getters.currentSession.email;
+            this.menteesRole = mentees.filter(mentee => mentee.active == true && mentee.email != this.email);
+            this.mentorsRole = mentors.filter(mentor => mentor.role != "mentor-0");
+            this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`);
             socket.on('connect', function() {
@@ -167,14 +168,11 @@ export default {
                     self.active_tab = data.index;
                 }
             })
-
-            const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role);
+            const {session, publisher } = initializeSession(sessionId, token, this.$store.getters.currentSession.role, document.getElementsByClassName('mentees-container')[0], this.email);
             this.publisher = publisher;
             this.session = session;
             this.messages = messageData.data.messages;
-            this.email = self.$store.getters.currentSession.email;
 
-    
             $(document).on('click', '.quill-editor', function() {
                 if(!this.isMentor) return
                 window.console.log("Click")
@@ -256,11 +254,9 @@ export default {
             }
         },
         showEndSessionModal () {
-            if(!this.isMentor) return
             this.showEndSession = true;
         },
         hideEndSessionModal () {
-            if(!this.isMentor) return
             this.showEndSession = false;
         },
         showAddTabModal () {
