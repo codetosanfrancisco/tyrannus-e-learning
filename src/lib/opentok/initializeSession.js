@@ -20,7 +20,7 @@ const initializeSession = (sessionId, token, role, container, email) => {
     if(email != 'mentor1@gmail.com') containerJ.append(`<div id="${role}" class="mentee"><div class="label-email">${email}</div></div>`)
 
     // Create a publisher
-    var publisher = OT.initPublisher(role,{ ...publisherOptions, name: role }, handleError);
+    var publisher = OT.initPublisher(role,{ ...publisherOptions, name: `${role} ${email}` }, handleError);
 
     publisher.setStyle({buttonDisplayMode: "off"})
 
@@ -39,8 +39,10 @@ const initializeSession = (sessionId, token, role, container, email) => {
     });
 
     session.on('streamCreated', function(event) {
-        if(event.stream.name !== 'mentor-0' && !document.getElementById(event.stream.name)) containerJ.append(`<div id="${event.stream.name}" class="mentee"><div class="label-email"></div></div>`)
-        session.subscribe(event.stream, event.stream.name, subscriberOptions, handleError);
+        var [role, email] = event.stream.name.split(" ");
+        window.console.log(role, email)
+        if(role !== 'mentor-0' && !document.getElementById(role)) containerJ.append(`<div id="${role}" class="mentee"><div class="label-email">${email}</div></div>`)
+        session.subscribe(event.stream, role, subscriberOptions, handleError);
         // var subscriber = session.subscribe(eve.stream, {...subscriberOptions});
         // subscriber.on('videoElementCreated', function(event) {
         //     document.getElementById(eve.stream.name).appendChild(event.element);
@@ -49,8 +51,9 @@ const initializeSession = (sessionId, token, role, container, email) => {
 
     session.on('streamDestroyed', function(e) {
         window.console.log(e)
+        var [role] = e.stream.name.split(" ");
         if(e.stream.name !== 'mentor-0') {
-            $(`#${e.stream.name}`).remove();
+            $(`#${role}`).remove();
         }
     })
 
