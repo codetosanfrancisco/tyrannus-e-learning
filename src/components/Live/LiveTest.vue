@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="live-test">
     <v-dialog v-model="showEndSession" persistent max-width="290">
         <v-card>
             <v-card-title class="headline">Are you sure you want to end the session?</v-card-title>
@@ -17,6 +17,8 @@
                 <div class="add-tab" @click="addScreenShare">Screen Share</div>
                 <div class="add-tab" @click="addWhiteBoard">Whiteboard</div>
                 <div class="add-tab" @click="addEditor">Editor</div>
+                <div class="add-tab" @click="addVideo">Video</div>
+                <div class="add-tab" @click="addFile">File Viewer</div>
                 <div class="add-tab" @click="hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
@@ -30,7 +32,8 @@
             Student Portal - Management - David Lin
         </div>
     </div>
-    <div class="live-container">
+    <div class="live-con">
+        <div class="live-container">
         <div v-bind:class="{workspace: true }">
             <v-overlay
                 :absolute="true"
@@ -40,6 +43,7 @@
             </v-overlay>
             <div class="tabs">
                 <v-tabs
+                    background-color=#f1f2f6
                     v-model="active_tab"
                 >
                     <v-tab v-for="(item, index) in workSpaceTabs" :key="index" class="tab">
@@ -76,6 +80,112 @@
                                                     :options="editorOption">
                                     </quill-editor>
                             </div>
+                            <div class="video-tab" v-if="item.name == 'Video'">
+                                    <v-tabs
+                                        v-model="tab"
+                                        background-color="indigo"
+                                        dark
+                                    >
+                                        <v-tab>
+                                            Video Upload
+                                        </v-tab>
+                                        <v-tab>
+                                            Video Youtube
+                                        </v-tab>
+                                    </v-tabs>
+                                    <v-tabs-items v-model="tab">
+                                        <v-tab-item>
+                                            <div class="video-upload">
+                                                <v-container>
+                                                    <v-row>
+                                                        <v-col cols="10">
+                                                            <v-file-input multiple label="File input" accept=".mp4" @change="onUploadVideo"></v-file-input>
+                                                        </v-col>
+                                                        <v-col cols="2">
+                                                            <v-btn @click="submitVideo" style="width: 100%; ">Submit</v-btn>
+                                                        </v-col>
+                                                    </v-row>
+                                                </v-container>
+                                                <v-container style="height: 100%; flex-grow: 1; ">
+                                                     <video-player  class="video-player-box" ref="videoPlayer" :options="playerOptions" >
+                                                    </video-player>
+                                                </v-container>
+                                            </div>
+                                        </v-tab-item>
+                                        <v-tab-item>
+                                            <div class="video-youtube">
+                                                <v-container style="height: 80px; ">
+                                                    <v-row>
+                                                        <v-col cols="10">
+                                                            <v-text-field
+                                                                label="Enter a youtube video url"
+                                                                single-line
+                                                                solo
+                                                                v-model="youtubeId"
+                                                            ></v-text-field>
+                                                        </v-col>
+                                                        <v-col cols="2">
+                                                            <v-btn @click="searchVideo" large style="width: 100%; ">Get</v-btn>
+                                                        </v-col>
+                                                    </v-row>
+                                                </v-container>
+                                                <v-container style="height: 100%; flex-grow: 1; ">
+                                                    <youtube :video-id="videoId" ref="youtube" @playing="playing" @ready="videoLoader = false; " width="100%" height="100%"></youtube>
+                                                    <div v-if="videoLoader" class="video-loader">
+                                                        <vue-loaders name="ball-rotate" color="indigo" scale="1"></vue-loaders>
+                                                    </div>
+                                                </v-container>
+                                            </div>
+                                        </v-tab-item>
+                                    </v-tabs-items>
+                            </div>
+
+                            <div class="file-viewer-tab" v-if="item.name == 'File Viewer'">
+                                <v-tabs
+                                    v-model="fileTab"
+                                    background-color="indigo"
+                                    dark
+                                >
+                                    <v-tab>
+                                        PDF
+                                    </v-tab>
+                                    <v-tab>
+                                        Microsoft Office
+                                    </v-tab>
+                                </v-tabs>
+                                <v-tabs-items v-model="fileTab">
+                                    <v-tab-item>
+                                            <v-container>
+                                                <v-row>
+                                                    <v-col cols="10">
+                                                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadPdf"></v-file-input>
+                                                    </v-col>
+                                                    <v-col cols="2">
+                                                        <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
+                                                    </v-col>
+                                                </v-row>
+                                            </v-container>
+                                            <v-container style="flex-grow: 1; ">
+                                                <pdf :src="pdfUrl"></pdf>
+                                            </v-container>
+                                    </v-tab-item>
+                                    <v-tab-item>
+                                        <v-container>
+                                            <v-row>
+                                                <v-col cols="10">
+                                                    <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadFile"></v-file-input>
+                                                </v-col>
+                                                <v-col cols="2">
+                                                    <v-btn @click="submitFile" style="width: 100%; ">Submit</v-btn>
+                                                </v-col>
+                                            </v-row>
+                                        </v-container>
+                                         <v-container style="flex-grow: 1; ">
+                                            <VueDocPreview :url="fileUrl" type="office"/>
+                                        </v-container>
+                                    </v-tab-item>
+                                </v-tabs-items>
+                            </div>
                         </v-tab-item>
                     </v-tabs-items>
                 </div>
@@ -111,6 +221,9 @@
                 </div>
             </div>
         </div>
+    
+    
+    </div>
     </div>
 </div>
 </template>
@@ -128,13 +241,18 @@ import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
 import myEmitter from './resources/events';
 import { turnMenteeOn, turnMenteeOff } from "@/lib/mongodb/video-session/audio/index"
-
+import { submitVideo, } from "@/lib/mongodb/video-session/video/index"
+import { submitFile, submitPdf } from "@/lib/mongodb/video-session/file/index"
+import VueDocPreview from 'vue-doc-preview'
+import pdf from 'vue-pdf'
 
 export default {
     name: "Live",
     components: {
         quillEditor,
-        DrawingBoard
+        DrawingBoard,
+        VueDocPreview,
+        pdf
     },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
@@ -242,18 +360,24 @@ export default {
             message: '',
             socket: null,
             messages: [],
-            mentorsRole: [],
             menteesRole: [],
             zeroMentor: null,
             showEndSession: false,
             showAddTab: false,
             active_tab: null,
+            fileTab: null,
             boardNumber: 1,
+            videoId: 'lG0Ys-2d4MA',
             workSpaceTabs: [{
                 name: "Screen Share",
             }
             ],
+            file: "",
+            youtubeId: "",
+            youtubeVideo: false,
             sharingMyScreen: false,
+            tab: null,
+            fileUrl: '',
             //Menu
             data: null,
             content: null,
@@ -280,10 +404,29 @@ export default {
                         ['clean']                                         // remove formatting button
                     ]
                 }
-            }
+            },
+            playerOptions: {
+                // videojs options
+                muted: true,
+                language: 'en',
+                playbackRates: [0.7, 1.0, 1.5, 2.0],
+                sources: [{
+                    type: "video/mp4",
+                    src: ""
+                }],
+            },
+            videoLoader: true,
+            pdfUrl:'',
+            pdfFile: null
         }
     },
     methods: {
+        playVideo() {
+            this.player.playVideo()
+        },
+        playing() {
+            window.console.log('we are watching!!!')
+        },
         sendMessage: async function() {
             try {
                 const message = this.message;
@@ -382,6 +525,30 @@ export default {
             this.sendNewTab("Editor")
             this.setActiveTab();
         },
+        addVideo: function() {
+            if(!this.isMentor) return
+            this.workSpaceTabs = [
+                    ...this.workSpaceTabs,
+                    {
+                        name: "Video",
+                    }
+                ]
+            this.hideAddTabModal();
+            this.sendNewTab("Video")
+            this.setActiveTab();
+        },
+        addFile: function() {
+            if(!this.isMentor) return
+            this.workSpaceTabs = [
+                ...this.workSpaceTabs,
+                {
+                    name: "File Viewer"
+                }
+            ]
+            this.hideAddTabModal();
+            this.sendNewTab("File Viewer")
+            this.setActiveTab();
+        },
         setActiveTab: function() {
             if(!this.isMentor) return
             this.active_tab = this.workSpaceTabs.length - 1;
@@ -427,6 +594,47 @@ export default {
             mentees[menteeNum] = mentee;
             this.menteesRole = mentees;
            turnMenteeOff(role, this.sessionId);
+        },
+        onUploadVideo: function(files) {
+            this.file = files[0];
+        },
+        submitVideo: async function() {
+            const formData = new FormData();
+            formData.append('video', this.file);
+            const data = await submitVideo(this.sessionId, formData);
+            window.console.log("Video",data)
+            this.playerOptions = {
+                // videojs options
+                ...this.playerOptions,
+                sources: [{
+                    type: "video/mp4",
+                    src: data.data.location
+                }],
+            }
+        },
+        onUploadFile: function(files) {
+            this.normFile = files[0]
+        },
+        submitFile: async function() {
+            const formData = new FormData();
+            formData.append('file', this.normFile);
+            const data = await submitFile(this.sessionId, formData);
+            this.fileUrl = data.data.location;
+        },
+        onUploadPdf: function(files) {
+            this.pdfFile = files[0]
+        },
+        submitPdf: async function() {
+            const formData = new FormData();
+            formData.append('pdf', this.pdfFile);
+            const data = await submitPdf(this.sessionId, formData);
+            this.pdfUrl = data.data.location;
+        },
+        searchVideo: function() {
+            if(this.youtubeId.trim().length > 0) {
+                const id = this.$youtube.getIdFromUrl(this.youtubeId.trim())
+                this.videoId = id;
+            }
         }
     },
     computed: {
@@ -439,6 +647,9 @@ export default {
         },
         isMentor() {
             return this.$store.getters.currentSession.email == "mentor1@gmail.com"
+        },
+        player() {
+            return this.$refs.youtube.player
         }
     },
     watch: {

@@ -1,6 +1,99 @@
 @import "../shared/mobile-responsive.sass"
 @import "../shared/color.sass"
 
+//Improved CSS
+.quill-editor
+   width: 100%
+   height: 100%
+   display: flex
+   flex-direction: column
+
+.ql-container
+   flex-grow: 1
+
+.center-align-item
+   display: flex
+   align-items: center
+   justify-content: center
+
+.file-viewer-tab
+   height: 100%
+   display: flex
+   flex-direction: column
+
+   .root
+      height: 100% !important
+
+   .container
+      padding: 0
+
+   .v-tabs
+      flex: 0 !important
+
+   .v-window-item
+      display: flex
+      flex-direction: column
+      height: 100%
+
+   .v-tabs-items
+      height: 100%
+
+.video-tab
+   height: 100%
+   display: flex
+   flex-direction: column
+
+   .video-upload
+      height: 100%
+      width: 100%
+      display: flex
+      flex-direction: column
+
+   .v-tabs
+      flex: 0 !important
+
+   .v-window
+      flex-grow: 1 !important
+
+      .v-window-item--active
+         height: 100%
+
+      .video-youtube
+         display: flex
+         flex-direction: column
+         height: 100%
+
+      .video-loader
+         width: 100%
+         height: 100%
+         display: flex
+         justify-content: center
+         align-items: center
+
+      .v-window__container
+         height: 100%
+
+   .tab-items
+      flex-grow: 1
+
+
+//End of Improved CSS
+
+.live-con
+   flex-grow: 1
+
+.live-test
+   display: flex
+   flex-direction: column
+
+.video-js
+   width: 100% !important
+   height: 80% !important
+
+.video-player-box
+   height: 100%
+   
+
 .live-navbar
    height: 50px
    background-color: $background-darkgrey
@@ -29,18 +122,9 @@
 .signature-pad
    width: 100%
 
-.quill-editor
-   width: 100%
-
-.testing
-   padding: 5px 0
-
 .quillWrapper
    display: flex
    flex-direction: column
-
-.ql-container
-   flex-grow: 1
 
 .toolbar-item-menu
    display: flex
@@ -139,7 +223,6 @@
 .workspace
    display: flex
    flex-direction: column
-   height: 100vh
    position: relative
    +sm
       height: auto
@@ -178,7 +261,6 @@
    align-items: center
 
 .tab
-   border-bottom: 5px solid $background-darkgrey
    padding: 10px
    font-size: 0.8em
    cursor: pointer
@@ -276,7 +358,6 @@
 
 
 .live-container 
-   height: 100vh
    background-color: $background-lightgrey
    +sm
       display: grid

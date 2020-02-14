@@ -13,13 +13,19 @@ import VueQrcode from '@chenfengyuan/vue-qrcode';
 import VTooltip from 'v-tooltip'
 import VueSignaturePad from 'vue-signature-pad';
 import VueScheduler from 'v-calendar-scheduler';
-
+import VueVideoPlayer from 'vue-video-player'
+import VueYoutube from 'vue-youtube'
+import VueLoaders from 'vue-loaders';
+import VueDocPreview from 'vue-doc-preview'
+ 
 // CSS Import
 import 'v-calendar-scheduler/lib/main.css';
 import 'hover.css/css/hover.css'
 import 'quill/dist/quill.core.css'
 import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
+import 'video.js/dist/video-js.css'
+import 'vue-loaders/dist/vue-loaders.css';
  
 Vue.use(VueSignaturePad);
 Vue.use(VTooltip)
@@ -27,6 +33,10 @@ Vue.use(DatetimePicker)
 Vue.use(VModal)
 Vue.use(VueScheduler);
 Vue.component(VueQrcode.name, VueQrcode);
+Vue.use(VueVideoPlayer)
+Vue.use(VueYoutube)
+Vue.use(VueLoaders);
+Vue.use(VueDocPreview);
 // Vue.use(library) makes the Vue components <router-view> from the library interpretable during runtime
 Vue.config.productionTip = false
 
