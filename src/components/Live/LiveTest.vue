@@ -172,17 +172,17 @@
                                     <v-tab-item>
                                         <v-container>
                                             <v-row>
-                                                <v-col cols="10">
+                                                <v-col cols="10" style="padding:0px 20px; ">
                                                     <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadFile"></v-file-input>
                                                 </v-col>
                                                 <v-col cols="2">
-                                                    <v-btn @click="submitFile" style="width: 100%; ">Submit</v-btn>
+                                                    <v-btn @click="submitFile" style="width: 90%; ">Submit</v-btn>
                                                 </v-col>
                                             </v-row>
                                         </v-container>
                                          <v-container style="flex-grow: 1; ">
                                             <VueDocPreview :url="fileUrl" type="office"/>
-                                        </v-container>
+                                            </v-container>
                                     </v-tab-item>
                                 </v-tabs-items>
                             </div>
@@ -245,6 +245,7 @@ import { submitVideo, } from "@/lib/mongodb/video-session/video/index"
 import { submitFile, submitPdf } from "@/lib/mongodb/video-session/file/index"
 import VueDocPreview from 'vue-doc-preview'
 import pdf from 'vue-pdf'
+//import Vue from 'vue';
 
 export default {
     name: "Live",
@@ -252,7 +253,8 @@ export default {
         quillEditor,
         DrawingBoard,
         VueDocPreview,
-        pdf
+        pdf,
+        //WebViewer
     },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
