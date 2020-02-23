@@ -17,11 +17,50 @@
                 <div class="add-tab" @click="addScreenShare">Screen Share</div>
                 <div class="add-tab" @click="addWhiteBoard">Whiteboard</div>
                 <div class="add-tab" @click="addEditor">Editor</div>
-                <div class="add-tab" @click="addVideo">Video</div>
+                <div class="add-tab" @click="addYoutube">Youtube</div>
                 <div class="add-tab" @click="addFile">File Viewer</div>
                 <div class="add-tab" @click="hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
+        </v-card>
+    </v-dialog>
+    <v-dialog v-model="library" max-width="990">
+        <v-card>
+             <div class="add-tabs-header">New</div>
+             <div >Upload file</div>
+             <v-container>
+                <v-row>
+                    <v-col cols="10">
+                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadPdf"></v-file-input>
+                    </v-col>
+                    <v-col cols="2">
+                        <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
+                    </v-col>
+                </v-row>
+            </v-container>
+            <div style="display: flex; ">
+                 <div style="display: flex; flex-direction: column; width: 25%; " v-for="(file, index) in files" v-bind:key="file">
+                     <pdf :src="file.src" style="display: inline-block; width: 100%" :page="1"></pdf>
+                     <v-btn @click="displayFile(index)">Click</v-btn>
+                 </div>
+             </div>
+             <div >Upload Video</div>
+             <v-container>
+                <v-row>
+                    <v-col cols="10">
+                        <v-file-input multiple label="File input" accept=".mp4" @change="onUploadVideo"></v-file-input>    
+                    </v-col>
+                    <v-col cols="2">
+                        <v-btn @click="submitVideo" style="width: 100%; ">Submit</v-btn>
+                    </v-col>
+                </v-row>
+            </v-container>
+             <div style="height: 50%; display: flex; ">
+                 <div style="display: flex; flex-direction: column; width: 25%; " v-for="(playerOption, index) in playerOptions" v-bind:key="playerOption">
+                     <video-player  class="video-player-box" ref="videoPlayer" :options="playerOption"></video-player>
+                     <v-btn @click="displayVideo(index)">Click</v-btn>
+                 </div>
+             </div>
         </v-card>
     </v-dialog>
     <div class="live-navbar">
@@ -31,6 +70,7 @@
         <div v-else>
             Student Portal - Management - David Lin
         </div>
+        <v-btn tile color="indigo" @click="library = !library">Upload</v-btn>
     </div>
     <div class="live-con">
         <div class="live-container">
@@ -96,50 +136,38 @@
                                     <v-tabs-items v-model="tab">
                                         <v-tab-item>
                                             <div class="video-upload">
-                                                <v-container>
-                                                    <v-row>
-                                                        <v-col cols="10">
-                                                            <v-file-input multiple label="File input" accept=".mp4" @change="onUploadVideo"></v-file-input>
-                                                        </v-col>
-                                                        <v-col cols="2">
-                                                            <v-btn @click="submitVideo" style="width: 100%; ">Submit</v-btn>
-                                                        </v-col>
-                                                    </v-row>
-                                                </v-container>
                                                 <v-container style="height: 100%; flex-grow: 1; ">
-                                                     <video-player  class="video-player-box" ref="videoPlayer" :options="playerOptions" >
+                                                     <video-player   @play="onPlayerPlayVideo($event)"
+                                                @pause="onPlayerPauseVideo($event)" class="video-player-box" ref="videoPlayer" :options="item.option" >
                                                     </video-player>
-                                                </v-container>
-                                            </div>
-                                        </v-tab-item>
-                                        <v-tab-item>
-                                            <div class="video-youtube">
-                                                <v-container style="height: 80px; ">
-                                                    <v-row>
-                                                        <v-col cols="10">
-                                                            <v-text-field
-                                                                label="Enter a youtube video url"
-                                                                single-line
-                                                                solo
-                                                                v-model="youtubeId"
-                                                            ></v-text-field>
-                                                        </v-col>
-                                                        <v-col cols="2">
-                                                            <v-btn @click="searchVideo" large style="width: 100%; ">Get</v-btn>
-                                                        </v-col>
-                                                    </v-row>
-                                                </v-container>
-                                                <v-container style="height: 100%; flex-grow: 1; ">
-                                                    <youtube :video-id="videoId" ref="youtube" @playing="playing" @ready="videoLoader = false; " width="100%" height="100%"></youtube>
-                                                    <div v-if="videoLoader" class="video-loader">
-                                                        <vue-loaders name="ball-rotate" color="indigo" scale="1"></vue-loaders>
-                                                    </div>
                                                 </v-container>
                                             </div>
                                         </v-tab-item>
                                     </v-tabs-items>
                             </div>
-
+                            <div class="video-youtube" v-if="item.name == 'Youtube'">
+                                <v-container style="height: 80px; ">
+                                    <v-row>
+                                        <v-col cols="10">
+                                            <v-text-field
+                                                label="Enter a youtube video url"
+                                                single-line
+                                                solo
+                                                v-model="youtubeId"
+                                            ></v-text-field>
+                                        </v-col>
+                                        <v-col cols="2">
+                                            <v-btn @click="searchVideo" large style="width: 100%; ">Get</v-btn>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                                <v-container style="height: 100%; flex-grow: 1; ">
+                                    <youtube :video-id="videoId" ref="youtube" @playing="playing" @ready="videoLoader = false; " width="100%" height="100%"></youtube>
+                                    <div v-if="videoLoader" class="video-loader">
+                                        <vue-loaders name="ball-rotate" color="indigo" scale="1"></vue-loaders>
+                                    </div>
+                                </v-container>
+                            </div>
                             <div class="file-viewer-tab" v-if="item.name == 'File Viewer'">
                                 <v-tabs
                                     v-model="fileTab"
@@ -149,40 +177,13 @@
                                     <v-tab>
                                         PDF
                                     </v-tab>
-                                    <v-tab>
-                                        Microsoft Office
-                                    </v-tab>
                                 </v-tabs>
                                 <v-tabs-items v-model="fileTab">
                                     <v-tab-item>
-                                            <v-container>
-                                                <v-row>
-                                                    <v-col cols="10">
-                                                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadPdf"></v-file-input>
-                                                    </v-col>
-                                                    <v-col cols="2">
-                                                        <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
-                                                    </v-col>
-                                                </v-row>
-                                            </v-container>
-                                            <v-container style="flex-grow: 1; ">
-                                                <pdf :src="pdfUrl"></pdf>
-                                            </v-container>
-                                    </v-tab-item>
-                                    <v-tab-item>
-                                        <v-container>
-                                            <v-row>
-                                                <v-col cols="10" style="padding:0px 20px; ">
-                                                    <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadFile"></v-file-input>
-                                                </v-col>
-                                                <v-col cols="2">
-                                                    <v-btn @click="submitFile" style="width: 90%; ">Submit</v-btn>
-                                                </v-col>
-                                            </v-row>
-                                        </v-container>
-                                         <v-container style="flex-grow: 1; ">
-                                            <VueDocPreview :url="fileUrl" type="office"/>
-                                            </v-container>
+                                        <pdf
+                                            :src="item.src"
+                                            style="display: inline-block; width: 25%"
+                                        ></pdf>
                                     </v-tab-item>
                                 </v-tabs-items>
                             </div>
@@ -221,8 +222,6 @@
                 </div>
             </div>
         </div>
-    
-    
     </div>
     </div>
 </div>
@@ -241,20 +240,18 @@ import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
 import myEmitter from './resources/events';
 import { turnMenteeOn, turnMenteeOff } from "@/lib/mongodb/video-session/audio/index"
-import { submitVideo, } from "@/lib/mongodb/video-session/video/index"
-import { submitFile, submitPdf } from "@/lib/mongodb/video-session/file/index"
-import VueDocPreview from 'vue-doc-preview'
+import { submitVideo, sendVideoLink, sendVideoEvent } from "@/lib/mongodb/video-session/video/index"
+import {  submitPdf, sendFileLink } from "@/lib/mongodb/video-session/file/index"
 import pdf from 'vue-pdf'
-//import Vue from 'vue';
+// import pdfvuer from 'pdfvuer'
 
 export default {
     name: "Live",
     components: {
         quillEditor,
         DrawingBoard,
-        VueDocPreview,
-        pdf,
-        //WebViewer
+        // pdf,
+        pdf
     },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
@@ -278,6 +275,8 @@ export default {
                     self.muted = true;
                 }
             });
+
+            //await getAllVideos(this.sessionId);
             
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
@@ -333,6 +332,76 @@ export default {
                     self.muted = true;
                 }
             })
+
+            socket.on('video-link', function(data) {
+                window.console.log(data)
+                if(data.email !== self.email) {
+                    self.playerOptions = [...self.playerOptions, {
+                        // videojs options
+                        language: 'en',
+                        playbackRates: [0.7, 1.0, 1.5, 2.0],
+                        sources: [{
+                            type: "video/mp4",
+                            src: data.videoLink
+                        }],
+                        fullscreen: {
+                            options: {navigationUI: 'hide'}
+                        }
+                    }];
+                    let length = self.playerOptions.length;
+                    self.workSpaceTabs = [
+                        ...self.workSpaceTabs,
+                        {
+                            name: "Video",
+                            option: self.playerOptions[length - 1],
+                        }
+                    ]
+                }
+            })
+
+            socket.on('file-link', function(data) {
+                window.console.log(data)
+                if(data.email !== self.email) {
+                    let pdfUrl = pdf.createLoadingTask(data.file);
+                    pdfUrl.then(pdf => {
+                        window.console.log(pdf)
+                        //self.numPages = pdf.numPages;
+                        self.files = [
+                            ...self.files,
+                            {
+                                src: pdfUrl,
+                                location: data.location,
+                                numPages: pdf.numPages
+                            }
+                        ]
+
+                        let length = self.files.length;
+                        self.workSpaceTabs = [
+                            ...self.workSpaceTabs,
+                            {
+                                name: "File Viewer",
+                                src: self.files[length - 1].src,
+                                numPages: self.files[length - 1].numPages
+                            }
+                        ]
+                    })
+                    .catch(function(e) {
+                        window.console.log("Erorr", e);
+                    })
+                }
+            })
+
+            socket.on('video-event', function(data) {
+                if(data.email !== self.email) {
+                    if(data.event == 'play') {
+                        //self.$refs.videoPlayer.player.play()
+                        window.console.log($('.video-player-box').find('video').get()[0].play())
+                    } else if(data.event == 'pause') {
+                        //self.$refs.videoPlayer.player.pause()
+                        window.console.log($('.video-player-box').find('video').get()[0].pause())
+                    }
+                }
+            })
             
             this.messages = messageData.data.messages;
 
@@ -352,6 +421,9 @@ export default {
     },
     data: function() {
         return {
+            numPages: 1,
+            currentPage: 1,
+            pageCount: 0,
             datas: [],
             isDragging: false,
             publisher: null,
@@ -366,6 +438,7 @@ export default {
             zeroMentor: null,
             showEndSession: false,
             showAddTab: false,
+            library: false,
             active_tab: null,
             fileTab: null,
             boardNumber: 1,
@@ -375,6 +448,7 @@ export default {
             }
             ],
             file: "",
+            files: [],
             youtubeId: "",
             youtubeVideo: false,
             sharingMyScreen: false,
@@ -407,22 +481,39 @@ export default {
                     ]
                 }
             },
-            playerOptions: {
-                // videojs options
-                muted: true,
-                language: 'en',
-                playbackRates: [0.7, 1.0, 1.5, 2.0],
-                sources: [{
-                    type: "video/mp4",
-                    src: ""
-                }],
-            },
+            playerOptions: [],
             videoLoader: true,
             pdfUrl:'',
             pdfFile: null
         }
     },
     methods: {
+        addYoutube: async function() {
+            if(!this.isMentor) return
+            this.workSpaceTabs = [
+                    ...this.workSpaceTabs,
+                    {
+                        name: "Youtube",
+                    }
+                ]
+            this.sendNewTab("Youtube")
+            this.setActiveTab();
+        },
+        onPlayerPlayVideo: async function() {
+            sendVideoEvent(this.sessionId, this.email, 'play')
+        },
+        onPlayerPauseVideo: async function() {
+            sendVideoEvent(this.sessionId, this.email, 'pause')
+        },
+        displayVideo: async function(index) {
+            window.console.log(this.playerOptions[index].sources[0].src);
+            try {
+                await sendVideoLink(this.playerOptions[index].sources[0].src,  this.sessionId, this.email)
+                this.addVideo(index);
+            }catch(e) {
+                window.console.log(e)
+            }
+        },
         playVideo() {
             this.player.playVideo()
         },
@@ -527,28 +618,39 @@ export default {
             this.sendNewTab("Editor")
             this.setActiveTab();
         },
-        addVideo: function() {
+        addVideo: function(i) {
             if(!this.isMentor) return
             this.workSpaceTabs = [
                     ...this.workSpaceTabs,
                     {
                         name: "Video",
+                        option: this.playerOptions[i],
                     }
                 ]
-            this.hideAddTabModal();
-            this.sendNewTab("Video")
+            this.library = false;
+            //this.sendNewTab("Video")
             this.setActiveTab();
         },
-        addFile: function() {
+        displayFile: async function(index) {
+            try {
+                await sendFileLink(this.sessionId, this.email, this.files[index].location)
+                this.addFile(index);
+            }catch(e) {
+                window.console.log(e);
+            }
+        },
+        addFile: function(i) {
             if(!this.isMentor) return
-            this.workSpaceTabs = [
+                this.workSpaceTabs = [
                 ...this.workSpaceTabs,
                 {
-                    name: "File Viewer"
+                    name: "File Viewer",
+                    src: this.files[i].src,
+                    numPages: this.files[i].numPages
                 }
             ]
-            this.hideAddTabModal();
-            this.sendNewTab("File Viewer")
+            this.library = false;
+            //this.sendNewTab("File Viewer")
             this.setActiveTab();
         },
         setActiveTab: function() {
@@ -605,32 +707,59 @@ export default {
             formData.append('video', this.file);
             const data = await submitVideo(this.sessionId, formData);
             window.console.log("Video",data)
-            this.playerOptions = {
+            this.playerOptions = [...this.playerOptions, {
                 // videojs options
-                ...this.playerOptions,
+                language: 'en',
+                playbackRates: [0.7, 1.0, 1.5, 2.0],
                 sources: [{
                     type: "video/mp4",
                     src: data.data.location
                 }],
-            }
+                fullscreen: {
+                    options: {navigationUI: 'hide'}
+                }
+            }]
         },
         onUploadFile: function(files) {
             this.normFile = files[0]
         },
         submitFile: async function() {
-            const formData = new FormData();
-            formData.append('file', this.normFile);
-            const data = await submitFile(this.sessionId, formData);
-            this.fileUrl = data.data.location;
+            //const formData = new FormData();
+            window.console.log(this.normFile)
+            // formData.append('file', this.normFile);
+            // const data = await submitFile(this.sessionId, formData);
+            //this.fileUrl = data.data.location;
+            //window.console.log(data);
         },
         onUploadPdf: function(files) {
             this.pdfFile = files[0]
         },
         submitPdf: async function() {
+            //var self = this;
             const formData = new FormData();
             formData.append('pdf', this.pdfFile);
+            const fileExtension = this.pdfFile.name.split('.').pop();
+            formData.append('extension', fileExtension);
+            window.console.log(this.pdfFile, fileExtension)
             const data = await submitPdf(this.sessionId, formData);
-            this.pdfUrl = data.data.location;
+            window.console.log(data.data.location);
+            var pdfUrl = pdf.createLoadingTask(data.data.location);
+            pdfUrl.then(pdf => {
+                window.console.log(pdf)
+                //self.numPages = pdf.numPages;
+
+                this.files = [
+                    ...this.files,
+                    {
+                        src: pdfUrl,
+                        location: data.data.location,
+                        numPages: pdf.numPages
+                    }
+                ]
+            })
+            .catch(function(e) {
+                window.console.log("Erorr", e);
+            })
         },
         searchVideo: function() {
             if(this.youtubeId.trim().length > 0) {
