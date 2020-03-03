@@ -18,7 +18,6 @@
                 <div class="add-tab" @click="addWhiteBoard">Whiteboard</div>
                 <div class="add-tab" @click="addEditor">Editor</div>
                 <div class="add-tab" @click="addYoutube">Youtube</div>
-                <div class="add-tab" @click="addFile">File Viewer</div>
                 <div class="add-tab" @click="hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
@@ -56,7 +55,7 @@
                 </v-row>
             </v-container>
              <div style="height: 50%; display: flex; ">
-                 <div style="display: flex; flex-direction: column; width: 25%; " v-for="(playerOption, index) in playerOptions" v-bind:key="playerOption">
+                 <div style="display: flex; flex-direction: column; width: 25%; height: 500px; " v-for="(playerOption, index) in playerOptions" v-bind:key="playerOption">
                      <video-player  class="video-player-box" ref="videoPlayer" :options="playerOption"></video-player>
                      <v-btn @click="displayVideo(index)">Click</v-btn>
                  </div>
@@ -70,7 +69,8 @@
         <div v-else>
             Student Portal - Management - David Lin
         </div>
-        <v-btn tile color="indigo" @click="library = !library">Upload</v-btn>
+        <v-btn v-if="isMentor" tile color="indigo" @click="library = !library">Upload</v-btn>
+        <button id="upload_widget" class="cloudinary-button">Upload files</button>
     </div>
     <div class="live-con">
         <div class="live-container">
@@ -102,7 +102,7 @@
                             :key="item"
                             class="screen"
                         >
-                            <div v-if="item.name == 'Screen Share'" style="height: 100%; " class="screen-share">
+                            <div v-if="item.name == 'SCREENSHARE'" style="height: 100%; " class="screen-share">
                                 <div class="screen-children" id="screen-preview" ></div>
                                  <div class="share-my-screen" v-if="isMentor">
                                     <v-btn color="green darken-1" tile @click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
@@ -110,42 +110,26 @@
                                     <v-btn color="green darken-1" tile @click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
                                 </div>
                             </div>
-                            <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'Whiteboard'">
+                            <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'DRAWING'">
                                 <div class="signature-pad">
                                     <drawing-board id="hello" :datas="datas" :email="email" :sessionId="getSessionId"></drawing-board>
                                 </div>
                             </div>
-                            <div class="screen-children testing" id="screen-preview" v-if="item.name == 'Editor'">
+                            <div class="screen-children testing" id="screen-preview" v-if="item.name == 'TEXTEDITOR'">
                                     <quill-editor v-model="content" ref="myQuillEditor"
                                                     :options="editorOption">
                                     </quill-editor>
                             </div>
-                            <div class="video-tab" v-if="item.name == 'Video'">
-                                    <v-tabs
-                                        v-model="tab"
-                                        background-color="indigo"
-                                        dark
-                                    >
-                                        <v-tab>
-                                            Video Upload
-                                        </v-tab>
-                                        <v-tab>
-                                            Video Youtube
-                                        </v-tab>
-                                    </v-tabs>
-                                    <v-tabs-items v-model="tab">
-                                        <v-tab-item>
-                                            <div class="video-upload">
-                                                <v-container style="height: 100%; flex-grow: 1; ">
-                                                     <video-player   @play="onPlayerPlayVideo($event)"
-                                                @pause="onPlayerPauseVideo($event)" class="video-player-box" ref="videoPlayer" :options="item.option" >
-                                                    </video-player>
-                                                </v-container>
-                                            </div>
-                                        </v-tab-item>
-                                    </v-tabs-items>
+                            <div class="video-tab" v-if="item.name == 'VIDEO'">
+                                <div class="video-upload">
+                                    <v-container style="height: 100%; flex-grow: 1; ">
+                                            <video-player   @play="onPlayerPlayVideo($event)"
+                                    @pause="onPlayerPauseVideo($event)" class="video-player-box" ref="videoPlayer" :options="item.option" >
+                                        </video-player>
+                                    </v-container>
+                                </div>
                             </div>
-                            <div class="video-youtube" v-if="item.name == 'Youtube'">
+                            <div class="video-youtube" v-if="item.name == 'YOUTUBE'">
                                 <v-container style="height: 80px; ">
                                     <v-row>
                                         <v-col cols="10">
@@ -168,24 +152,11 @@
                                     </div>
                                 </v-container>
                             </div>
-                            <div class="file-viewer-tab" v-if="item.name == 'File Viewer'">
-                                <v-tabs
-                                    v-model="fileTab"
-                                    background-color="indigo"
-                                    dark
-                                >
-                                    <v-tab>
-                                        PDF
-                                    </v-tab>
-                                </v-tabs>
-                                <v-tabs-items v-model="fileTab">
-                                    <v-tab-item>
-                                        <pdf
-                                            :src="item.src"
-                                            style="display: inline-block; width: 25%"
-                                        ></pdf>
-                                    </v-tab-item>
-                                </v-tabs-items>
+                            <div class="file-viewer-tab" v-if="item.name == 'FILEVIEWER'">
+                                <pdf
+                                    :src="item.src"
+                                    style="display: inline-block; width: 25%"
+                                ></pdf>
                             </div>
                         </v-tab-item>
                     </v-tabs-items>
@@ -240,10 +211,74 @@ import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
 import myEmitter from './resources/events';
 import { turnMenteeOn, turnMenteeOff } from "@/lib/mongodb/video-session/audio/index"
-import { submitVideo, sendVideoLink, sendVideoEvent } from "@/lib/mongodb/video-session/video/index"
-import {  submitPdf, sendFileLink } from "@/lib/mongodb/video-session/file/index"
+import { submitVideo, sendVideoLink, sendVideoEvent, getAllVideos } from "@/lib/mongodb/video-session/video/index"
+import {  submitPdf, sendFileLink, getAllFiles } from "@/lib/mongodb/video-session/file/index"
 import pdf from 'vue-pdf'
 // import pdfvuer from 'pdfvuer'
+
+const VIDEO = 'VIDEO';
+const FILEVIEWER = 'FILEVIEWER';
+const SCREENSHARE = 'SCREENSHARE';
+const DRAWING = 'DRAWING';
+const TEXTEDITOR = 'TEXTEDITOR';
+const YOUTUBE = 'YOUTUBE';
+
+var myWidget = window.cloudinary.createUploadWidget({
+  cloudName: 'dnsrf3okp', 
+  uploadPreset: 'zwwi8cxw'}, (error, result) => { 
+    if (!error && result && result.event === "success") { 
+      window.console.log('Done! Here is the image info: ', result.info); 
+    }
+  }
+)
+
+const tabOptions = new Map([
+    [
+        VIDEO, 
+        {
+            name: VIDEO,
+            option: null,
+            tabLimit: false
+        }
+    ],
+    [
+        SCREENSHARE,
+        {
+            name: SCREENSHARE,
+            tabLimit: {
+                num: 1
+            }
+        }
+    ],
+    [
+        DRAWING,
+        {
+            name: DRAWING,
+            tabLimit: false
+        }
+    ],
+    [
+        FILEVIEWER,
+        {
+            name: FILEVIEWER,
+            tabLimit: false
+        }
+    ],
+    [
+        TEXTEDITOR,
+        {
+            name: TEXTEDITOR,
+            tabLimit: false
+        }
+    ],
+    [
+        YOUTUBE,
+        {
+            name: YOUTUBE,
+            tabLimit: false
+        }
+    ]
+])
 
 export default {
     name: "Live",
@@ -266,6 +301,12 @@ export default {
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
+
+            // Once connect, emit sessionId to join the matching room
+            socket.on('connect', function() {
+                socket.emit('room', self.sessionId);
+            });
+
             initializeSession(self, token, sessionId, function(publisher, session) {
                 self.publisher = publisher;
                 self.session = session;
@@ -276,11 +317,45 @@ export default {
                 }
             });
 
-            //await getAllVideos(this.sessionId);
+            try {
+                const videos = await getAllVideos(this.sessionId);
+                const files = await getAllFiles(this.sessionId);
+                files.data.data.map(function(link){
+                    var pdfUrl = pdf.createLoadingTask(link);
+                    pdfUrl.then(pdf => {
+                        window.console.log(pdf)
+                        //self.numPages = pdf.numPages;
+
+                        self.files = [
+                            ...self.files,
+                            {
+                                src: pdfUrl,
+                                location: link,
+                                numPages: pdf.numPages
+                            }
+                        ]
+                    })
+                })
+                videos.data.data.map(function(link){
+                    self.playerOptions = [...self.playerOptions, {
+                        // videojs options
+                        language: 'en',
+                        playbackRates: [0.7, 1.0, 1.5, 2.0],
+                        sources: [{
+                            type: "video/mp4",
+                            src: link
+                        }],
+                        fullscreen: {
+                            options: {navigationUI: 'hide'}
+                        }
+                    }]
+                })
+                window.console.log(videos,files);
+            }catch(e) {
+                window.console.log(e);
+            }
             
-            socket.on('connect', function() {
-                socket.emit('room', self.sessionId);
-            });
+    
             socket.on('message', function(data) {
                 self.messages = data;
             });
@@ -349,13 +424,9 @@ export default {
                         }
                     }];
                     let length = self.playerOptions.length;
-                    self.workSpaceTabs = [
-                        ...self.workSpaceTabs,
-                        {
-                            name: "Video",
-                            option: self.playerOptions[length - 1],
-                        }
-                    ]
+                    self.setNewTab(self.returnWantedTab(VIDEO), {
+                        option: self.playerOptions[length - 1],
+                    })
                 }
             })
 
@@ -376,14 +447,10 @@ export default {
                         ]
 
                         let length = self.files.length;
-                        self.workSpaceTabs = [
-                            ...self.workSpaceTabs,
-                            {
-                                name: "File Viewer",
-                                src: self.files[length - 1].src,
-                                numPages: self.files[length - 1].numPages
-                            }
-                        ]
+                        self.setNewTab(self.returnWantedTab(FILEVIEWER), {
+                            src: self.files[length - 1].src,
+                            numPages: self.files[length - 1].numPages
+                        })
                     })
                     .catch(function(e) {
                         window.console.log("Erorr", e);
@@ -414,6 +481,10 @@ export default {
                  if(!self.isMentor) return
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
+
+            document.getElementById("upload_widget").addEventListener("click", function(){
+                myWidget.open();
+            }, false);
         }
         catch(e) {
             alert(e);
@@ -444,7 +515,7 @@ export default {
             boardNumber: 1,
             videoId: 'lG0Ys-2d4MA',
             workSpaceTabs: [{
-                name: "Screen Share",
+                name: SCREENSHARE,
             }
             ],
             file: "",
@@ -488,16 +559,57 @@ export default {
         }
     },
     methods: {
+        returnWantedTab: function(nameOfTab, option) {
+            return {
+                ...tabOptions.get(nameOfTab),
+                ...option
+            };
+        },
+        setNewTab: function(newTab) {
+            this.workSpaceTabs = [
+                ...this.workSpaceTabs,
+                {
+                    ...newTab
+                }
+            ]
+        },
         addYoutube: async function() {
             if(!this.isMentor) return
-            this.workSpaceTabs = [
-                    ...this.workSpaceTabs,
-                    {
-                        name: "Youtube",
-                    }
-                ]
-            this.sendNewTab("Youtube")
+            this.setNewTab(this.returnWantedTab(YOUTUBE));
+            this.sendNewTab(YOUTUBE)
             this.setActiveTab();
+            this.hideAddTabModal();
+        },
+        addScreenShare: function() {
+            if(!this.isMentor) return
+            if(checkScreenSharing()) {
+                this.setNewTab(this.returnWantedTab(SCREENSHARE));
+                this.hideAddTabModal();
+                this.setActiveTab();
+                this.sendNewTab(SCREENSHARE);
+            } else {
+                alert("Screen sharing is not supported in this browser.")
+            }
+        },
+        addEditor: function() {
+            if(!this.isMentor) return
+            this.setNewTab(this.returnWantedTab(TEXTEDITOR));
+            this.hideAddTabModal();
+            this.sendNewTab(TEXTEDITOR);
+            this.setActiveTab();
+        },
+        addVideo: function(i) {
+            if(!this.isMentor) return
+            this.setNewTab(this.returnWantedTab(VIDEO, {option: this.playerOptions[i],}))
+            this.library = false;
+            this.setActiveTab();
+        },
+        addWhiteBoard: function() {
+            if(!this.isMentor) return
+            this.setNewTab(this.returnWantedTab(DRAWING));
+            this.hideAddTabModal();
+            this.setActiveTab();
+            this.sendNewTab(DRAWING)
         },
         onPlayerPlayVideo: async function() {
             sendVideoEvent(this.sessionId, this.email, 'play')
@@ -557,22 +669,6 @@ export default {
                 }
             }
         },
-        addScreenShare: function() {
-            if(!this.isMentor) return
-            if(checkScreenSharing()) {
-                this.workSpaceTabs = [
-                    ...this.workSpaceTabs,
-                    {
-                        name: "Screen Share"
-                    }
-                ]
-                this.hideAddTabModal();
-                this.setActiveTab();
-                this.sendNewTab("Screen Share");
-            } else {
-                alert("Screen sharing is not supported in this browser.")
-            }
-        },
         initializeScreenSharing: function() {
             if(!this.isMentor) return
             if(checkScreenSharing()) {
@@ -581,55 +677,17 @@ export default {
             } else {
                 alert("Screen Sharing is not supported in this browser.")
             }
-            
-            
         },
+        // Try stop screen sharing: Unpublish it, continue screen sharing: initialize again
         stopScreenSharing: function() {
             if(!this.isMentor) return
             this.sharingMyScreen = false; 
             //this.session.unpublish(this.screenSharingPublisher);
             this.screenSharingPublisher.publishVideo(false);
         },
-        addWhiteBoard: function() {
-            if(!this.isMentor) return
-            this.workSpaceTabs = [
-                    ...this.workSpaceTabs,
-                    {
-                        name: "Whiteboard",
-                    }
-                ]
-                this.hideAddTabModal();
-                this.setActiveTab();
-                this.sendNewTab("Whiteboard")
-        },
         continueScreenSharing: function() {
             if(!this.isMentor) return
             this.screenSharingPublisher.publishVideo(true);
-        },
-        addEditor: function() {
-            if(!this.isMentor) return
-            this.workSpaceTabs = [
-                    ...this.workSpaceTabs,
-                    {
-                        name: "Editor",
-                    }
-                ]
-            this.hideAddTabModal();
-            this.sendNewTab("Editor")
-            this.setActiveTab();
-        },
-        addVideo: function(i) {
-            if(!this.isMentor) return
-            this.workSpaceTabs = [
-                    ...this.workSpaceTabs,
-                    {
-                        name: "Video",
-                        option: this.playerOptions[i],
-                    }
-                ]
-            this.library = false;
-            //this.sendNewTab("Video")
-            this.setActiveTab();
         },
         displayFile: async function(index) {
             try {
@@ -641,16 +699,11 @@ export default {
         },
         addFile: function(i) {
             if(!this.isMentor) return
-                this.workSpaceTabs = [
-                ...this.workSpaceTabs,
-                {
-                    name: "File Viewer",
-                    src: this.files[i].src,
-                    numPages: this.files[i].numPages
-                }
-            ]
+            this.setNewTab(this.returnWantedTab(FILEVIEWER, {
+                src: this.files[i].src,
+                numPages: this.files[i].numPages
+            }))
             this.library = false;
-            //this.sendNewTab("File Viewer")
             this.setActiveTab();
         },
         setActiveTab: function() {
@@ -720,17 +773,6 @@ export default {
                 }
             }]
         },
-        onUploadFile: function(files) {
-            this.normFile = files[0]
-        },
-        submitFile: async function() {
-            //const formData = new FormData();
-            window.console.log(this.normFile)
-            // formData.append('file', this.normFile);
-            // const data = await submitFile(this.sessionId, formData);
-            //this.fileUrl = data.data.location;
-            //window.console.log(data);
-        },
         onUploadPdf: function(files) {
             this.pdfFile = files[0]
         },
@@ -789,7 +831,7 @@ export default {
         }
     },
     beforeDestroy() {
-        this.editor.destroy()
+        this.editor.destroy();
     },
 }
 </script>

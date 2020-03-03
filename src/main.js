@@ -17,6 +17,7 @@ import VueVideoPlayer from 'vue-video-player'
 import VueYoutube from 'vue-youtube'
 import VueLoaders from 'vue-loaders';
 import VueDocPreview from 'vue-doc-preview'
+import Cloudinary from 'cloudinary-vue';
  
 // CSS Import
 import 'v-calendar-scheduler/lib/main.css';
@@ -37,6 +38,11 @@ Vue.use(VueVideoPlayer)
 Vue.use(VueYoutube)
 Vue.use(VueLoaders);
 Vue.use(VueDocPreview);
+Vue.use(Cloudinary, {
+  configuration: {
+    cloudName: "dnsrf3okp"
+  }
+});
 // Vue.use(library) makes the Vue components <router-view> from the library interpretable during runtime
 Vue.config.productionTip = false
 
