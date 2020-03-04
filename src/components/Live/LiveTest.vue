@@ -505,6 +505,7 @@ export default {
         }
     },
     methods: {
+        
         submitPdf: async function() {
             //var self = this;
             const formData = new FormData();
