@@ -25,41 +25,11 @@
     </v-dialog>
     <v-dialog v-model="library" max-width="990">
         <v-card>
-             <div class="add-tabs-header">New</div>
-             <div >Upload file</div>
-             <v-container>
-                <v-row>
-                    <v-col cols="10">
-                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadPdf"></v-file-input>
-                    </v-col>
-                    <v-col cols="2">
-                        <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
-                    </v-col>
-                </v-row>
-            </v-container>
-            <div style="display: flex; ">
-                 <div style="display: flex; flex-direction: column; width: 25%; " v-for="(file, index) in files" v-bind:key="file">
-                     <pdf :src="file.src" style="display: inline-block; width: 100%" :page="1"></pdf>
-                     <v-btn @click="displayFile(index)">Click</v-btn>
-                 </div>
-             </div>
-             <div >Upload Video</div>
-             <v-container>
-                <v-row>
-                    <v-col cols="10">
-                        <v-file-input multiple label="File input" accept=".mp4" @change="onUploadVideo"></v-file-input>    
-                    </v-col>
-                    <v-col cols="2">
-                        <v-btn @click="submitVideo" style="width: 100%; ">Submit</v-btn>
-                    </v-col>
-                </v-row>
-            </v-container>
-             <div style="height: 50%; display: flex; ">
-                 <div style="display: flex; flex-direction: column; width: 25%; height: 500px; " v-for="(playerOption, index) in playerOptions" v-bind:key="playerOption">
-                     <video-player  class="video-player-box" ref="videoPlayer" :options="playerOption"></video-player>
-                     <v-btn @click="displayVideo(index)">Click</v-btn>
-                 </div>
-             </div>
+             <div>Media Library</div>
+            <div v-for="(file,index) in files" v-bind:key="file">
+                <v-img :src="file.thumbnail_url" max-width="300"/>
+                <v-btn tile @click="addFile(index)">Open</v-btn>
+            </div>
         </v-card>
     </v-dialog>
     <div class="live-navbar">
@@ -153,10 +123,7 @@
                                 </v-container>
                             </div>
                             <div class="file-viewer-tab" v-if="item.name == 'FILEVIEWER'">
-                                <pdf
-                                    :src="item.src"
-                                    style="display: inline-block; width: 25%"
-                                ></pdf>
+                                <v-img v-for="image in item.images" :src="image" max-width="300" v-bind:key="image"/>
                             </div>
                         </v-tab-item>
                     </v-tabs-items>
@@ -211,10 +178,8 @@ import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
 import myEmitter from './resources/events';
 import { turnMenteeOn, turnMenteeOff } from "@/lib/mongodb/video-session/audio/index"
-import { submitVideo, sendVideoLink, sendVideoEvent, getAllVideos } from "@/lib/mongodb/video-session/video/index"
-import {  submitPdf, sendFileLink, getAllFiles } from "@/lib/mongodb/video-session/file/index"
-import pdf from 'vue-pdf'
-// import pdfvuer from 'pdfvuer'
+import { sendVideoLink, sendVideoEvent } from "@/lib/mongodb/video-session/video/index"
+import { sendFileLink, submitPdf } from "@/lib/mongodb/video-session/file/index"
 
 const VIDEO = 'VIDEO';
 const FILEVIEWER = 'FILEVIEWER';
@@ -223,14 +188,7 @@ const DRAWING = 'DRAWING';
 const TEXTEDITOR = 'TEXTEDITOR';
 const YOUTUBE = 'YOUTUBE';
 
-var myWidget = window.cloudinary.createUploadWidget({
-  cloudName: 'dnsrf3okp', 
-  uploadPreset: 'zwwi8cxw'}, (error, result) => { 
-    if (!error && result && result.event === "success") { 
-      window.console.log('Done! Here is the image info: ', result.info); 
-    }
-  }
-)
+
 
 const tabOptions = new Map([
     [
@@ -284,9 +242,7 @@ export default {
     name: "Live",
     components: {
         quillEditor,
-        DrawingBoard,
-        // pdf,
-        pdf
+        DrawingBoard
     },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
@@ -301,6 +257,49 @@ export default {
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
+            var myWidget = window.cloudinary.createUploadWidget({
+                cloudName: 'dnsrf3okp', 
+                uploadPreset: 'zwwi8cxw',
+                sources: ['local']
+            }, (error, result) => { 
+                    if (!error && result && result.event === "success") { 
+                        window.console.log('Done! Here is the image info: ', result.info); 
+                        var array = [];
+                        if(result.info.pages > 0) {
+                            for(let i = 1; i <= result.info.pages; i++) {
+                                array.push(`https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill,pg_${i}/v${result.info.version}/${result.info.public_id}.jpg`)
+                            }
+                            self.files = [
+                                ...self.files,
+                                {
+                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${result.info.version}/${result.info.public_id}.jpg`,
+                                    images: array,
+                                    resource_type: 'document'
+                                }
+                            ]
+                        } else if(result.info.resource_type == 'video') {
+                            self.files = [
+                                ...self.files,
+                                {
+                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/video/upload/c_fill/v${result.info.version}/${result.info.public_id}.jpg`,
+                                    images: result.info.secure_url,
+                                    resource_type: 'video'
+                                }
+                            ]
+                        } 
+                        else {
+                            self.files = [
+                                ...self.files,
+                                {
+                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${result.info.version}/${result.info.public_id}.jpg`,
+                                    images: [result.info.secure_url],
+                                    resource_type: 'others'
+                                }
+                            ]
+                        }
+                    }
+                }
+            )
 
             // Once connect, emit sessionId to join the matching room
             socket.on('connect', function() {
@@ -316,44 +315,6 @@ export default {
                     self.muted = true;
                 }
             });
-
-            try {
-                const videos = await getAllVideos(this.sessionId);
-                const files = await getAllFiles(this.sessionId);
-                files.data.data.map(function(link){
-                    var pdfUrl = pdf.createLoadingTask(link);
-                    pdfUrl.then(pdf => {
-                        window.console.log(pdf)
-                        //self.numPages = pdf.numPages;
-
-                        self.files = [
-                            ...self.files,
-                            {
-                                src: pdfUrl,
-                                location: link,
-                                numPages: pdf.numPages
-                            }
-                        ]
-                    })
-                })
-                videos.data.data.map(function(link){
-                    self.playerOptions = [...self.playerOptions, {
-                        // videojs options
-                        language: 'en',
-                        playbackRates: [0.7, 1.0, 1.5, 2.0],
-                        sources: [{
-                            type: "video/mp4",
-                            src: link
-                        }],
-                        fullscreen: {
-                            options: {navigationUI: 'hide'}
-                        }
-                    }]
-                })
-                window.console.log(videos,files);
-            }catch(e) {
-                window.console.log(e);
-            }
             
     
             socket.on('message', function(data) {
@@ -430,33 +391,9 @@ export default {
                 }
             })
 
-            socket.on('file-link', function(data) {
-                window.console.log(data)
-                if(data.email !== self.email) {
-                    let pdfUrl = pdf.createLoadingTask(data.file);
-                    pdfUrl.then(pdf => {
-                        window.console.log(pdf)
-                        //self.numPages = pdf.numPages;
-                        self.files = [
-                            ...self.files,
-                            {
-                                src: pdfUrl,
-                                location: data.location,
-                                numPages: pdf.numPages
-                            }
-                        ]
-
-                        let length = self.files.length;
-                        self.setNewTab(self.returnWantedTab(FILEVIEWER), {
-                            src: self.files[length - 1].src,
-                            numPages: self.files[length - 1].numPages
-                        })
-                    })
-                    .catch(function(e) {
-                        window.console.log("Erorr", e);
-                    })
-                }
-            })
+            // socket.on('file-link', function(data) {
+            
+            // })
 
             socket.on('video-event', function(data) {
                 if(data.email !== self.email) {
@@ -554,8 +491,6 @@ export default {
             },
             playerOptions: [],
             videoLoader: true,
-            pdfUrl:'',
-            pdfFile: null
         }
     },
     methods: {
@@ -600,7 +535,19 @@ export default {
         },
         addVideo: function(i) {
             if(!this.isMentor) return
-            this.setNewTab(this.returnWantedTab(VIDEO, {option: this.playerOptions[i],}))
+            window.console.log(this.files[i].images)
+            this.setNewTab(this.returnWantedTab(VIDEO,{ option: {
+                // videojs options
+                language: 'en',
+                playbackRates: [0.7, 1.0, 1.5, 2.0],
+                sources: [{
+                    type: "video/mp4",
+                    src: this.files[i].images
+                }],
+                fullscreen: {
+                    options: {navigationUI: 'hide'}
+                }
+            }}))
             this.library = false;
             this.setActiveTab();
         },
@@ -699,10 +646,11 @@ export default {
         },
         addFile: function(i) {
             if(!this.isMentor) return
-            this.setNewTab(this.returnWantedTab(FILEVIEWER, {
-                src: this.files[i].src,
-                numPages: this.files[i].numPages
-            }))
+            if(this.files[i].resource_type == 'document' || this.files[i].resource_type == 'others') {
+                this.setNewTab(this.returnWantedTab(FILEVIEWER, this.files[i]))
+            } else if(this.files[i].resource_type == 'video') {
+                this.addVideo(i)
+            }
             this.library = false;
             this.setActiveTab();
         },
@@ -751,57 +699,6 @@ export default {
             mentees[menteeNum] = mentee;
             this.menteesRole = mentees;
            turnMenteeOff(role, this.sessionId);
-        },
-        onUploadVideo: function(files) {
-            this.file = files[0];
-        },
-        submitVideo: async function() {
-            const formData = new FormData();
-            formData.append('video', this.file);
-            const data = await submitVideo(this.sessionId, formData);
-            window.console.log("Video",data)
-            this.playerOptions = [...this.playerOptions, {
-                // videojs options
-                language: 'en',
-                playbackRates: [0.7, 1.0, 1.5, 2.0],
-                sources: [{
-                    type: "video/mp4",
-                    src: data.data.location
-                }],
-                fullscreen: {
-                    options: {navigationUI: 'hide'}
-                }
-            }]
-        },
-        onUploadPdf: function(files) {
-            this.pdfFile = files[0]
-        },
-        submitPdf: async function() {
-            //var self = this;
-            const formData = new FormData();
-            formData.append('pdf', this.pdfFile);
-            const fileExtension = this.pdfFile.name.split('.').pop();
-            formData.append('extension', fileExtension);
-            window.console.log(this.pdfFile, fileExtension)
-            const data = await submitPdf(this.sessionId, formData);
-            window.console.log(data.data.location);
-            var pdfUrl = pdf.createLoadingTask(data.data.location);
-            pdfUrl.then(pdf => {
-                window.console.log(pdf)
-                //self.numPages = pdf.numPages;
-
-                this.files = [
-                    ...this.files,
-                    {
-                        src: pdfUrl,
-                        location: data.data.location,
-                        numPages: pdf.numPages
-                    }
-                ]
-            })
-            .catch(function(e) {
-                window.console.log("Erorr", e);
-            })
         },
         searchVideo: function() {
             if(this.youtubeId.trim().length > 0) {
