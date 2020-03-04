@@ -25,6 +25,16 @@
     </v-dialog>
     <v-dialog v-model="library" max-width="990">
         <v-card>
+            <v-container>
+                <v-row>
+                    <v-col cols="10">
+                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadPdf"></v-file-input>
+                    </v-col>
+                    <v-col cols="2">
+                        <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
+                    </v-col>
+                </v-row>
+            </v-container>
              <div>Media Library</div>
             <div v-for="(file,index) in files" v-bind:key="file">
                 <v-img :src="file.thumbnail_url" max-width="300"/>
@@ -491,9 +501,18 @@ export default {
             },
             playerOptions: [],
             videoLoader: true,
+            pdfFile: null
         }
     },
     methods: {
+        submitPdf: async function() {
+            //var self = this;
+            const formData = new FormData();
+            formData.append('pdf', this.pdfFile);
+            window.console.log(this.pdfFile)
+            const data = await submitPdf(this.sessionId, formData);
+            window.console.log(data.data);
+        },
         returnWantedTab: function(nameOfTab, option) {
             return {
                 ...tabOptions.get(nameOfTab),
