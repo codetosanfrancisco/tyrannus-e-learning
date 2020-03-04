@@ -509,12 +509,46 @@ export default {
             this.pdfFile = files[0]
         },
         submitPdf: async function() {
-            //var self = this;
+            var self = this;
             const formData = new FormData();
             formData.append('pdf', this.pdfFile);
+            const fileExtension = this.pdfFile.name.split('.').pop();
+            formData.append('extension', fileExtension);
             window.console.log(this.pdfFile)
             const data = await submitPdf(this.sessionId, formData);
-            window.console.log(data.data);
+            var array = [];
+                        if(data.data.file.pages > 0) {
+                            for(let i = 1; i <= data.data.file.pages; i++) {
+                                array.push(`https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill,pg_${i}/v${data.data.file.version}/${data.data.file.public_id}.jpg`)
+                            }
+                            self.files = [
+                                ...self.files,
+                                {
+                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
+                                    images: array,
+                                    resource_type: 'document'
+                                }
+                            ]
+                        } else if(data.data.file.resource_type == 'video') {
+                            self.files = [
+                                ...self.files,
+                                {
+                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/video/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
+                                    images: data.data.file.secure_url,
+                                    resource_type: 'video'
+                                }
+                            ]
+                        } 
+                        else {
+                            self.files = [
+                                ...self.files,
+                                {
+                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
+                                    images: [data.data.file.secure_url],
+                                    resource_type: 'others'
+                                }
+                            ]
+                        }
         },
         returnWantedTab: function(nameOfTab, option) {
             return {
