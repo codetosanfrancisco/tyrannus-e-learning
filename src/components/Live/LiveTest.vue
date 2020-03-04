@@ -505,7 +505,9 @@ export default {
         }
     },
     methods: {
-        
+        onUploadPdf: function(files) {
+            this.pdfFile = files[0]
+        },
         submitPdf: async function() {
             //var self = this;
             const formData = new FormData();
