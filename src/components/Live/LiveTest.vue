@@ -28,7 +28,7 @@
             <v-container>
                 <v-row>
                     <v-col cols="10">
-                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt" @change="onUploadPdf"></v-file-input>
+                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt,.mp4,.jpg,.png" @change="onUploadPdf"></v-file-input>
                     </v-col>
                     <v-col cols="2">
                         <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
@@ -38,19 +38,18 @@
              <div>Media Library</div>
             <div v-for="(file,index) in files" v-bind:key="file">
                 <v-img :src="file.thumbnail_url" max-width="300"/>
-                <v-btn tile @click="addFile(index)">Open</v-btn>
+                <v-btn tile @click="displayFile(index)">Open</v-btn>
             </div>
         </v-card>
     </v-dialog>
     <div class="live-navbar">
         <div v-if="isMentor">
             Lecturer Portal - Management - Prof Dr. Paul Cheng
+            <v-btn v-if="isMentor" tile color="indigo" @click="library = !library">Upload</v-btn>
         </div>
         <div v-else>
             Student Portal - Management - David Lin
         </div>
-        <v-btn v-if="isMentor" tile color="indigo" @click="library = !library">Upload</v-btn>
-        <button id="upload_widget" class="cloudinary-button">Upload files</button>
     </div>
     <div class="live-con">
         <div class="live-container">
@@ -267,49 +266,7 @@ export default {
             this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
             const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
-            var myWidget = window.cloudinary.createUploadWidget({
-                cloudName: 'dnsrf3okp', 
-                uploadPreset: 'zwwi8cxw',
-                sources: ['local']
-            }, (error, result) => { 
-                    if (!error && result && result.event === "success") { 
-                        window.console.log('Done! Here is the image info: ', result.info); 
-                        var array = [];
-                        if(result.info.pages > 0) {
-                            for(let i = 1; i <= result.info.pages; i++) {
-                                array.push(`https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill,pg_${i}/v${result.info.version}/${result.info.public_id}.jpg`)
-                            }
-                            self.files = [
-                                ...self.files,
-                                {
-                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${result.info.version}/${result.info.public_id}.jpg`,
-                                    images: array,
-                                    resource_type: 'document'
-                                }
-                            ]
-                        } else if(result.info.resource_type == 'video') {
-                            self.files = [
-                                ...self.files,
-                                {
-                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/video/upload/c_fill/v${result.info.version}/${result.info.public_id}.jpg`,
-                                    images: result.info.secure_url,
-                                    resource_type: 'video'
-                                }
-                            ]
-                        } 
-                        else {
-                            self.files = [
-                                ...self.files,
-                                {
-                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${result.info.version}/${result.info.public_id}.jpg`,
-                                    images: [result.info.secure_url],
-                                    resource_type: 'others'
-                                }
-                            ]
-                        }
-                    }
-                }
-            )
+            
 
             // Once connect, emit sessionId to join the matching room
             socket.on('connect', function() {
@@ -401,9 +358,21 @@ export default {
                 }
             })
 
-            // socket.on('file-link', function(data) {
-            
-            // })
+            socket.on('file-link', function(data) {
+                window.console.log(data)
+                if(data.email !== self.email) {
+                    self.files = [
+                        ...self.files,
+                        data.file
+                    ]
+                    
+                    let length = self.files.length;
+                    window.console.log(length)
+                    window.console.log(data)
+                    self.addFile(length - 1);
+                    
+                }
+            })
 
             socket.on('video-event', function(data) {
                 if(data.email !== self.email) {
@@ -428,10 +397,6 @@ export default {
                  if(!self.isMentor) return
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
-
-            document.getElementById("upload_widget").addEventListener("click", function(){
-                myWidget.open();
-            }, false);
         }
         catch(e) {
             alert(e);
@@ -590,7 +555,6 @@ export default {
             this.setActiveTab();
         },
         addVideo: function(i) {
-            if(!this.isMentor) return
             window.console.log(this.files[i].images)
             this.setNewTab(this.returnWantedTab(VIDEO,{ option: {
                 // videojs options
@@ -694,14 +658,13 @@ export default {
         },
         displayFile: async function(index) {
             try {
-                await sendFileLink(this.sessionId, this.email, this.files[index].location)
+                await sendFileLink(this.sessionId, this.email, this.files[index])
                 this.addFile(index);
             }catch(e) {
                 window.console.log(e);
             }
         },
         addFile: function(i) {
-            if(!this.isMentor) return
             if(this.files[i].resource_type == 'document' || this.files[i].resource_type == 'others') {
                 this.setNewTab(this.returnWantedTab(FILEVIEWER, this.files[i]))
             } else if(this.files[i].resource_type == 'video') {

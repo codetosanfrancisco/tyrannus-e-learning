@@ -3,7 +3,6 @@ import App from './App.vue'
 import "@/lib/cssLoader/index"
 import "@/lib/form/index"
 import "@/lib/vuex/index"
-import "@/lib/sideBar/index"
 import store from "@/store/index"
 import router from "@/lib/router/index"
 import vuetify from './lib/vuetify'
@@ -18,6 +17,7 @@ import VueYoutube from 'vue-youtube'
 import VueLoaders from 'vue-loaders';
 import VueDocPreview from 'vue-doc-preview'
 import Cloudinary from 'cloudinary-vue';
+import OwlCarousel from 'v-owl-carousel'
  
 // CSS Import
 import 'v-calendar-scheduler/lib/main.css';
@@ -29,6 +29,7 @@ import 'video.js/dist/video-js.css'
 import 'vue-loaders/dist/vue-loaders.css';
  
 Vue.use(VueSignaturePad);
+Vue.component('carousel', OwlCarousel)
 Vue.use(VTooltip)
 Vue.use(DatetimePicker)
 Vue.use(VModal)

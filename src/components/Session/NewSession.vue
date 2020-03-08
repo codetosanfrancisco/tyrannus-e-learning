@@ -1,228 +1,246 @@
 <template>
-    <transition name="fade">
-      <div class="new-session">
-          <modal name="hello-world" :height="700" :clickToClose="false">
-            <div class="new-session-loader" v-if="showLoader">
-              <div class="new-session-loader-con">
-                <vue-loaders name="ball-pulse-rise" color="indigo" scale="0.5"></vue-loaders>
-                <div>Scheduling session ...</div>
-              </div>
+      <div class="new-session" style="height: 100%; display: flex; flex-direction: column; padding: 20px 30px;">
+        <loading :active.sync="isLoading" 
+            :can-cancel="true" 
+            :on-cancel="onCancel"
+            :is-full-page="fullPage"></loading>
+            <v-dialog
+          v-model="dialog"
+          max-width="290"
+        >
+        <v-card>
+          <v-card-title class="headline">Session is created!</v-card-title>
+
+          <v-card-text>
+            Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.
+          </v-card-text>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+
+            <v-btn
+              color="green darken-1"
+              text
+              @click="navigateTo('Sessions')"
+            >
+              Go To All Sessions
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <div style="font-size: 1.5em; font-weight: 200; ">Schedule New Session</div>
+      <form id="form1" style="width: 100%; display: flex; flex-direction: column; flex-grow: 1; ">
+        <div class="form-group" style="flex-grow: 1">
+            <div class="e-float-input">
+                <ejs-textbox  v-model="form.title" name="Title" data-required-message="* Enter the title of the session" required="" data-msg-containerid="titleError" id='textbox' floatLabelType="Auto" placeholder="Title of The Session"></ejs-textbox>
             </div>
-            <div v-if="showError" class="new-session-error">
-              <v-icon x-large>error</v-icon>
-              <div>
-                {{ errorMessage }}
-              </div>
-              <div v-on:click="showError = !showError; showForm = !showForm; ">Go Back</div>
+            <div id="titleError"></div>
+        </div>
+
+        <div class="form-group" style="flex-grow: 1">
+            <div class="e-float-input">
+                <ejs-datepicker :value="form.date" :strictMode='true' :format="dateFormat" placeholder="Pick a date" name="Date" data-required-message="* Pick the date of the session" required="" data-msg-containerid="dateError" :min="minDate"></ejs-datepicker>
             </div>
-            <div v-if="showSuccess" class="new-session-success">
-              <v-icon x-large>check</v-icon>
-              <div>Schedule successful! </div>
-              <div>Session details</div>
-              <div>Edit details </div>
-              <small>The url to the meeting room will be sent to all participants before the session. </small>
-              <v-btn text color="#2f3640" v-on:click="this.hide"> Close </v-btn>
+            <div id="dateError"></div>
+        </div>
+
+        <div class="form-group" style="flex-grow: 1">
+            <div class="e-float-input">
+                <ejs-timepicker :min='minTime' v-model="form.time" placeholder="Pick a time" name="Time" data-required-message="* Pick the time of the session" required="" data-msg-containerid="timeError"></ejs-timepicker>
             </div>
-            <div class="new-session-form" v-if="showForm">
-              <div class="new-session-form-title">Schedule a new session</div>
-              <div class="new-session-form-body">
-                  <v-form
-                    ref="form"
-                    v-model="valid"
-                    :lazy-validation="lazy"
-                  >
-                    <v-text-field
-                      :rules="nameRules"
-                      label="Title"
-                      required
-                      v-model="title"
-                    ></v-text-field>
+            <div id="timeError"></div>
+        </div>
 
-                    <div>
-                      <v-datetime-picker label="Start time" v-model="start"> 
-                        <template slot="actions" slot-scope="{ parent }">
-                          <v-btn tile color="error lighten-1" @click.native="parent.clearHandler">Cancel</v-btn>
-                          <v-btn tile color="success darken-1" @click="parent.okHandler">Done</v-btn>
-                        </template>
-                      </v-datetime-picker>
-                    </div>
-
-                    <div>
-                      <v-datetime-picker label="End time" v-model="end"> 
-                        <template slot="actions" slot-scope="{ parent }">
-                          <v-btn tile color="error lighten-1" @click.native="parent.clearHandler">Cancel</v-btn>
-                          <v-btn tile color="success darken-1" @click="parent.okHandler">Done</v-btn>
-                        </template>
-                      </v-datetime-picker>
-                    </div>
-
-                    <v-select
-                      v-model="mentors"
-                      :items="mentorItems"
-                      label="Mentors"
-                      multiple
-                    >
-                    </v-select>
-
-                    <v-select
-                      v-model="mentees"
-                      :items="participantItems"
-                      label="Participants"
-                      multiple
-                    >
-                    </v-select>
-
-                    <div>
-                      <v-textarea
-                      clearable
-                      clear-icon="cancel"
-                      label="Agenda"
-                      rows="7"
-                      v-model="agenda"
-                    ></v-textarea>
-                    </div>
-                  </v-form>
-              </div>
-              <div class="new-session-form-buttons">
-                <v-btn class="ma-2" tile color="error" dark v-on:click="this.hide">Cancel</v-btn>
-                <v-btn class="ma-2" tile color="success" dark v-on:click="this.createSession">Schedule Now</v-btn>
-              </div>
+        <div class="form-group" style="flex-grow: 1">
+            <div class="e-float-input">
+                <ejs-dropdownlist :dataSource='sportsData' v-model="form.lecturers" id='dropdownlist' placeholder="Pick a lecturer" name="Lecturer" data-required-message="* Pick a lecturer for the session" required="" data-msg-containerid="lecturerError"></ejs-dropdownlist>
             </div>
-          </modal>
-          <vue-scheduler @event-clicked="eventClicked" event-display="name" :events="events" :available-views="['month','week', 'day']" initial-view="week" :disable-dialog="true" :initial-date="selectedDate" :key="selectedDate"/>
-          <v-btn
-            v-show="!hidden"
-            color="#2f3640"
-            dark
-            fixed
-            bottom
-            right
-            fab
-            v-on:click="show"
-          >
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
+            <div id="lecturerError"></div>
+        </div>
+
+        <div class="form-group" style="flex-grow: 1">
+            <div class="e-float-input">
+              <ejs-multiselect id='multiselect' :dataSource='sportsDatas' v-model="form.students" placeholder="Select a game" mode="CheckBox" :fields='fields' :showSelectAll='showSelectAll' selectAllText="Select All" unSelectAllText="unSelect All" name="Students" data-required-message="* Pick students" required="" data-msg-containerid="studentsError"></ejs-multiselect>  
+            </div>
+            <div id="studentsError"></div>
+        </div>
+
+        <div class="form-group" style="flex-grow: 1">
+            <div class="e-float-input">
+                <ejs-textbox :multiline="true" v-model="form.agenda" name="Agenda" id='textbox' floatLabelType="Auto" placeholder="Agenda of The Session"></ejs-textbox>
+            </div>
+        </div>
+        
+        <div class="submitBtn">
+          <button class="submit-btn e-btn" id="submit-btn" style="width: 100%; ">Submit</button>
       </div>
-    </transition>
+      </form> 
+  </div>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import Vue from 'vue';
+import "@syncfusion/ej2-base/styles/material.css";
+import "@syncfusion/ej2-vue-dropdowns/styles/material.css";
+import "@syncfusion/ej2-buttons/styles/material.css";
+import "@syncfusion/ej2-vue-inputs/styles/material.css";
+import  '@syncfusion/ej2-inputs/styles/material.css';
+import  '@syncfusion/ej2-popups/styles/material.css';
+import  '@syncfusion/ej2-lists/styles/material.css';
+import  "@syncfusion/ej2-vue-calendars/styles/material.css";
+import { TextBoxPlugin } from '@syncfusion/ej2-vue-inputs';
+import { MultiSelectPlugin,} from '@syncfusion/ej2-vue-dropdowns';
+import { MultiSelect, CheckBoxSelection } from '@syncfusion/ej2-dropdowns';
+import { DatePickerPlugin } from '@syncfusion/ej2-vue-calendars';
+import { DropDownListPlugin } from '@syncfusion/ej2-vue-dropdowns';
 import { createSession } from '@/lib/mongodb/session/index'
+import { FormValidator  } from '@syncfusion/ej2-vue-inputs';
+import { TimePickerPlugin } from "@syncfusion/ej2-vue-calendars";
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
+MultiSelect.Inject(CheckBoxSelection);
+Vue.use(MultiSelectPlugin);
+Vue.use(TextBoxPlugin);
+Vue.use(DropDownListPlugin);
+Vue.use(DatePickerPlugin);
+Vue.use(TimePickerPlugin)
 
 export default {
     name: "Dashboard",
+    components: {
+      Loading
+    },
     data() {
       return {
-        events: [
-          {
-            date: new Date(),
-            startTime: "13:00",
-            endTime: "15:00",
-            name: "Date with David",
-            comments: "MUST bring chocolate.",
-            customAttribute: "I'm a custom attribute"
-          },
-          {
-            date: new Date() - 1,
-            startTime: "13:00",
-            endTime: "15:00",
-            name: "Date with David",
-            comments: "MUST bring chocolate.",
-            customAttribute: "I'm a custom attribute",
-          }
-        ],
-        hidden: false,
-        selectedDate: new Date(),
+        isLoading: false,
+        fullPage: true,
+        fields : { text: 'Game', value: 'Id' },
+        showSelectAll : true,
+        dialog: false,
+        sportsDatas: [
+        { Id: 'game1', Game: 'Badminton' },
+        { Id: 'game2', Game: 'Football' },
+        { Id: 'game3', Game: 'Tennis' },
+        { Id: 'game4', Game: 'Golf' },
+        { Id: 'game5', Game: 'Cricket' },
+        { Id: 'game6', Game: 'Handball' },
+        { Id: 'game7', Game: 'Karate' },
+        { Id: 'game8', Game: 'Fencing' },
+        { Id: 'game9', Game: 'Boxing' }
+      ],
+        sportsData: ['Badminton', 'Cricket', 'Football', 'Golf', 'Tennis'],
+        waterMark : 'Select a datetime',
+        minDate : new Date(new Date().getFullYear(), new Date().getMonth(),new Date().getDate() ,  new Date().getHours()),
+        minTime: new Date(new Date().getFullYear(), new Date().getMonth(),new Date().getDate() ,  new Date().getHours()),
+        dateFormat : 'yyyy-MM-dd',
+        // selectedDate: new Date(),
         agenda: "The agenda of this session is ...",
         showLoader: false,
         showForm: true,
         showError: false,
         showSuccess: false,
         errorMessage: "You have another session booking overlapped.",
-        start: null,
-        end: null,
         mentorItems: ["mentor1@gmail.com", "mentor2@gmail.com", "mentor3@gmail.com"],
         participantItems: ["mentee1@gmail.com", "mentee2@gmail.com", "mentee3@gmail.com"],
-        mentors: [],
-        mentees: [],
-        title: ""
+        form: {
+          title: '',
+          date: new Date(),
+          time: '',
+          lecturers: [],
+          students: [],
+          agenda: ''
+        },
+        disableSubmit: true,
+        options : {
+        //Initialize the CustomPlacement.
+          customPlacement: function(inputElement, errorElement) {
+              inputElement = inputElement.closest('.form-group').querySelector('.error');
+              inputElement.parentElement.appendChild(errorElement);
+          },
+              rules: {
+                  'Title': {
+                      required: true
+                  },
+                  'Time': {
+                      required: true
+                  },
+                  'Lecturer': {
+                      required: true
+                  },
+                  'Date': {
+                      required: true
+                  },
+                  'Students': {
+                    required: true
+                  }
+              }
+        }
       }
     },
     methods: {
-      eventDisplay: event => event.customAttribute,
-      show () {
-        this.$modal.show('hello-world');
-      },
-      hide () {
-        this.$modal.hide('hello-world');
-      },
-      eventClicked() {
-        alert("Very Very Very")
-      },
-      createSession() {
-        this.showSuccess = !this.showSuccess; 
-        this.showForm = !this.showForm; 
-
-        try {
-          createSession({
-            agenda: this.agenda,
-            start: this.start,
-            end: this.end,
-            mentors: this.mentors,
-            mentees: this.mentees
-          })
-        }
-        catch(e) {
-          alert(e);
-        }
+      onFormSubmit: async function() {
+            let formStatus = this.formObj.validate();
+            if (formStatus) {
+                let form = {
+                  ...this.form,
+                  date: this.form.date.toLocaleString(),
+                  time: this.form.time.toLocaleString(),
+                  lecturers: [this.form.lecturers]
+                }
+                this.isLoading = true;
+                try {
+                  await createSession(form);
+                  this.formObj.element.reset();
+                  this.isLoading = false;
+                  this.dialog = true
+                }
+                catch(e) {
+                  alert(e);
+                  this.isLoading = false;
+                }
+            }
+        },
+      navigateTo(name) {
+        this.$router.push({ name })
       }
     },
-    created() {
-    this.$store.subscribe((mutation, state) => {
-      if (mutation.type === 'SET_SELECTED_DATE') {
-        window.console.log(`Updating to ${state.selectedDate}`);
-
-        // Do whatever makes sense now
-        if (state.selectedDate) {
-          var arr = state.selectedDate.split('/');
-          this.selectedDate = new Date(arr[2], arr[1] - 1, arr[0]);
-        }
-      }
-    });
-    },
-    computed: mapState(['selectedDate']),
-      // .new-session 
-  //   padding: 20px 0
-
-  // .new-session-form 
-  //   padding: 20px
-
-  // .new-session-form-title
-  //   padding: 20px
-
-  // .new-session-form-body 
-  //   padding: 0 20px
-
-  // .new-session-form-buttons
-  //   display: flex
-  //   justify-content: flex-end
-  //   padding: 20px 20px
-
-  // .new-session-loader-con
-  //   display: flex
-  //   justify-content: center
-  //   align-items: center
-  //   flex-direction: column
-
-  // .new-session-loader
-  //   height: 100%
-  //   display: flex
-  //   justify-content: center
-  //   align-items: center
+    mounted() {
+      let localObj = this;
+       this.formObj = new FormValidator('#form1', this.options);
+        document.getElementById('submit-btn').onclick = function(e) {
+            e.preventDefault()
+            localObj.onFormSubmit();
+        };
+    }
 }
 </script>
 
-<style >
 
+<style scoped>
+.start {
+  border-bottom: 1px solid grey;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.time {
+  border-bottom: 1px solid grey;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.8em;
+}
+
+.nani {
+  margin: 20px 0px;
+}
+
+.label {
+  font-size: 0.8em;
+  font-weight: 300;
+  padding: 5px 0;
+}
 </style>

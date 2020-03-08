@@ -1,96 +1,110 @@
 <template>
-    <div class="v-sidebar-menu">
-        <div class="v-sidebar-menu-header"></div>
-        <div class="v-sidebar-menu-items">
-            <div class="v-sidebar-menu-item" v-for="item in menu" v-bind:key="item.icon" v-bind:id="item.pathName" v-on:click="navigateTo(item.pathName)">
-                <v-icon color="#ffffff">{{ item.icon }}</v-icon>
-            </div>
+    <v-navigation-drawer
+        style="height: 100vh; "
+        :right="right"
+        absolute
+        class="deep-purple accent-4"
+        dark
+        permanent
+      >
+        <v-list>
+            <v-list-item two-line :class="miniVariant && 'px-0'">
+            <v-list-item-avatar>
+              <img src="https://randomuser.me/api/portraits/men/81.jpg">
+            </v-list-item-avatar>
+
+            <v-list-item-content>
+              <v-list-item-title>Application</v-list-item-title>
+              <v-list-item-subtitle>Subtext</v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+
+          <v-divider></v-divider>
+
+            <v-list-group
+                v-for="item in items"
+                :key="item.title"
+                v-model="item.active"
+                :prepend-icon="item.action"
+                no-action
+                color="rgb(255,255,255)"
+            >
+                <template v-slot:activator>
+                <v-list-item-content >
+                    <v-list-item-title v-text="item.title" ></v-list-item-title>
+                </v-list-item-content>
+                </template>
+
+                <v-list-item
+                v-for="subItem in item.items"
+                :key="subItem.title"
+                @click="navigateTo(subItem.route)"
+                >
+                <v-list-item-content>
+                    <v-list-item-title v-text="subItem.title"></v-list-item-title>
+                </v-list-item-content>
+                </v-list-item>
+            </v-list-group>
+    </v-list>
+
+      <template v-slot:append>
+        <div class="pa-2">
+          <v-btn block>Logout</v-btn>
         </div>
-    </div>
+      </template>
+      </v-navigation-drawer>
 </template>
 
 <script>
-import $ from 'jquery';
 export default {
     name: "SideBar",
     data: function() {
         return {
-            menu: [
-               {
-                   icon: "dashboard",
-                   pathName: "Dashboard"
-               },
-               {
-                   icon: "date_range",
-                   pathName: "Sessions"
-               },
-               {
-                   icon: "more_horiz",
-                   pathName: "UserLogin"
-               }
+            items: [
+          {
+            action: 'dashboard',
+            title: 'Dashboard',
+            active: true,
+            items: [
+              { title: 'User Activity' },
+              { title: 'Statistics' },
             ]
+          },
+          {
+            action: 'people',
+            title: 'Users',
+            items: [
+              { title: 'Admin' , route: 'Admin'},
+              { title: 'Lecturers', route: 'Lecturers' },
+              { title: 'Students', route: 'Students' },
+            ],
+          },
+          {
+            action: 'date_range',
+            title: 'Sessions',
+            items: [
+              { title: 'All Session', route: 'Sessions' },
+              { title: 'New Session', route: 'NewSession' },
+              { title: 'My Schedule', route: 'NewSession' }
+            ],
+          },
+          {
+            action: 'account_circle',
+            title: 'Account',
+            items: [
+              { title: 'Setting', route: 'Sessions' },
+            ],
+          },
+        ],
         }
-    },
-    mounted() {
-    // place your code
-        this.updateSideBar();
     },
     methods: {
         navigateTo: function(pathName) {
             this.$router.push({ name: pathName })
-            this.updateSideBar(); 
-        },
-        updateSideBar: function() {
-            const SESSIONS = ['NewSession', 'Sessions']
-            const DASHBOARD = ['Dashboard']
-            var target;
-            if(SESSIONS.includes(this.$route.name)) {
-                target = 'Sessions'
-            }
-            else if(DASHBOARD.includes(this.$route.name)) {
-                target = 'Dashboard'
-            }
-            $('.v-sidebar-menu-items').find(`#${target}`).css('background-color', '#212121')
-            $('.v-sidebar-menu-item').not(`#${target}`).css('background-color', '#2f3640')  
-        }
-    },
-    watch: {
-        $route() {
-             this.updateSideBar();
         }
     }
 }
 </script>
 
 <style>
-    .v-sidebar-menu {
-        background-color: #2f3640;
-        height: 100%;
-        width: 70px !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .v-sidebar-menu-items {
-        flex-grow: 5;
-        align-items: center;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .v-sidebar-menu-item {
-        height: 60px;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-    }
-
-    .v-sidebar-menu-header {
-        flex-grow: 1
-    }
 </style>
