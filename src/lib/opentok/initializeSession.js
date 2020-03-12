@@ -11,15 +11,22 @@ const handleError = (error) => {
       alert(error.message);
     }
   }
+
+const isLecturer = (role) => {
+    return role.split("-")[0] == 'lecturer'
+}
   
 const initializeSession = (self, token, sessionId, cb) => {
 
 
-    var { role, email, addMentee, removeMentee } = self;
+    var { role, email, addStudent, removeStudent } = self;
+    alert(role);
     var session = OT.initSession(apiKey, sessionId), publisher;
 
-    if(email != 'mentor1@gmail.com') {
-        addMentee(role, email);
+    alert(token)
+
+    if(!isLecturer(role)) {
+        addStudent(role, email);
     }
 
     Vue.nextTick(function() {
@@ -28,31 +35,35 @@ const initializeSession = (self, token, sessionId, cb) => {
 
         publisher.setStyle({buttonDisplayMode: "off"});
 
+        window.console.log(publisher, role)
+        window.console.log(session)
+
         // Connect to the session
         session.connect(token, function(error) {
             // If the connection is successful, publish to the session
             if (error) {
-                handleError(error);
+                //handleError(error);
+                alert(error)
             } else {
                 session.publish(publisher, handleError);
             }
         });
 
         session.on('streamCreated', function(event) {
-            var [roleMentee, emailMentee] = event.stream.name.split(" ");
-            window.console.log(roleMentee, emailMentee)
-            if(roleMentee !== 'mentor-0' && !document.getElementById(roleMentee)) {
-                addMentee(roleMentee, emailMentee);
+            var [roleStudent, emailStudent] = event.stream.name.split(" ");
+            window.console.log("Role Student", roleStudent, emailStudent)
+            if(!isLecturer(roleStudent) && !document.getElementById(roleStudent)) {
+                addStudent(roleStudent, emailStudent);
             }
             Vue.nextTick(function() {
-                session.subscribe(event.stream, roleMentee, subscriberOptions, handleError);
+                session.subscribe(event.stream, roleStudent, subscriberOptions, handleError);
             })
         });
 
         session.on('streamDestroyed', function(e) {
-            var [roleMentee, emailMentee] = e.stream.name.split(" ");
-            if(roleMentee !== 'mentor-0') {
-                removeMentee(roleMentee, emailMentee);
+            var [roleStudent, emailStudent] = e.stream.name.split(" ");
+            if(isLecturer(roleStudent)) {
+                removeStudent(roleStudent, emailStudent);
             }
         })
 

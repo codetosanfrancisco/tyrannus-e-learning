@@ -7,7 +7,6 @@
         :expand-on-hover="expandOnHover"
         :mini-variant="miniVariant"
         :right="right"
-        :src="bg"
         absolute
         dark
       >
@@ -46,9 +45,7 @@
       </v-navigation-drawer>
       <v-data-table
     :headers="headers"
-    :items="desserts"
-    sort-by="calories"
-    class="elevation-1"
+    :items="students"
   >
     <template v-slot:top>
       <v-toolbar flat color="white">
@@ -61,7 +58,7 @@
         <v-spacer></v-spacer>
         <v-dialog v-model="dialog" max-width="500px">
           <template v-slot:activator="{ on }">
-            <v-btn color="primary" dark class="mb-2" v-on="on">New Item</v-btn>
+            <v-btn color="primary" dark class="mb-2" v-on="on">New Student</v-btn>
           </template>
           <v-card>
             <v-card-title>
@@ -102,6 +99,13 @@
     <template v-slot:item.action="{ item }">
       <v-icon
         small
+        class="mr-2"
+        @click="editItem(item)"
+      >
+        mdi-pencil
+      </v-icon>
+      <v-icon
+        small
         @click="deleteItem(item)"
       >
         mdi-delete
@@ -117,10 +121,13 @@
 
 
 <script>
+import { getUsers, removeUserRole  } from "@/lib/mongodb/users/index";
+import { authStore } from "@/lib/vuex/store/index"
+
   export default {
     data: () => ({
       dialog: false,
-      drawer: true,
+      drawer: false,
         items: [
           { title: 'Dashboard', icon: 'mdi-view-dashboard' },
           { title: 'Photos', icon: 'mdi-image' },
@@ -140,18 +147,16 @@
         background: false,
       headers: [
         {
-          text: 'Dessert (100g serving)',
+          text: 'No.',
           align: 'start',
           sortable: false,
-          value: 'name',
+          value: 'no',
         },
-        { text: 'Calories', value: 'calories' },
-        { text: 'Fat (g)', value: 'fat' },
-        { text: 'Carbs (g)', value: 'carbs' },
-        { text: 'Protein (g)', value: 'protein' },
+        { text: 'Email', value: 'email' },
         { text: 'Actions', value: 'action', sortable: false },
       ],
       desserts: [],
+      students: [],
       editedIndex: -1,
       editedItem: {
         name: '',
@@ -181,95 +186,53 @@
       },
     },
 
-    created () {
-      this.initialize()
+    created: function() {
+      this.initialize();
+    },
+
+    mounted: async function() {
+       try {
+         const { data } = await getUsers('student');
+         let students = data;
+        students = students.map((student, index) => {
+          return{
+            ...student, no: index + 1
+          }   
+        })
+        window.console.log("STUDENTS", students)
+        this.students = students;
+         window.console.log("Nani", data, this.students);
+       }  
+       catch(e) {
+         window.console.log(e)
+       }
     },
 
     methods: {
       initialize () {
-        this.desserts = [
-          {
-            name: 'Frozen Yogurt',
-            calories: 159,
-            fat: 6.0,
-            carbs: 24,
-            protein: 4.0,
-          },
-          {
-            name: 'Ice cream sandwich',
-            calories: 237,
-            fat: 9.0,
-            carbs: 37,
-            protein: 4.3,
-          },
-          {
-            name: 'Eclair',
-            calories: 262,
-            fat: 16.0,
-            carbs: 23,
-            protein: 6.0,
-          },
-          {
-            name: 'Cupcake',
-            calories: 305,
-            fat: 3.7,
-            carbs: 67,
-            protein: 4.3,
-          },
-          {
-            name: 'Gingerbread',
-            calories: 356,
-            fat: 16.0,
-            carbs: 49,
-            protein: 3.9,
-          },
-          {
-            name: 'Jelly bean',
-            calories: 375,
-            fat: 0.0,
-            carbs: 94,
-            protein: 0.0,
-          },
-          {
-            name: 'Lollipop',
-            calories: 392,
-            fat: 0.2,
-            carbs: 98,
-            protein: 0,
-          },
-          {
-            name: 'Honeycomb',
-            calories: 408,
-            fat: 3.2,
-            carbs: 87,
-            protein: 6.5,
-          },
-          {
-            name: 'Donut',
-            calories: 452,
-            fat: 25.0,
-            carbs: 51,
-            protein: 4.9,
-          },
-          {
-            name: 'KitKat',
-            calories: 518,
-            fat: 26.0,
-            carbs: 65,
-            protein: 7,
-          },
-        ]
+        this.students = []
       },
 
       editItem (item) {
-        this.editedIndex = this.desserts.indexOf(item)
+        this.editedIndex = this.students.indexOf(item)
         this.editedItem = Object.assign({}, item)
         this.dialog = true
       },
 
-      deleteItem (item) {
-        const index = this.desserts.indexOf(item)
-        confirm('Are you sure you want to delete this item?') && this.desserts.splice(index, 1)
+      deleteItem: async function(item) {
+        window.console.log(item, item._id)
+        if(item._id == authStore.state.user._id) return;
+        try { 
+          const { data: students} = await removeUserRole(item._id, 'student');
+          this.students = students.map((student, index) => {
+          return{
+            ...student, no: index + 1
+          } 
+        })
+        }
+        catch(e) {
+          alert(e)
+        }
       },
 
       close () {

@@ -14,7 +14,8 @@
                             <span>{{ errors[0] }}</span>
                         </ValidationProvider>
                         <div>
-                            <v-btn tile color="primary" dark v-on:click="this.logInUser">Log in</v-btn>
+                            <v-btn tile color="primary" dark v-on:click="this.signUpUser">Sign Up</v-btn>
+                            <v-btn tile color="primary" dark v-on:click="this.navigateTo">Login</v-btn>
                         </div>
                   </v-form>
             </v-col>
@@ -25,9 +26,8 @@
 <script>
 import { extend } from 'vee-validate';
 import { required, email, alpha_num } from 'vee-validate/dist/rules';
-import { logInUser } from "@/lib/mongodb/index"
-import { authStore } from "@/lib/vuex/store/index"
-import Cookies from 'js-cookie'
+import { signUpUser } from "@/lib/mongodb/index"
+// import { authStore } from "@/lib/vuex/store/index"
 var capitalize = require('capitalize')
 
 extend('email', {
@@ -44,12 +44,9 @@ extend('required', {
 });
 
 export default {
-    name: "UserLogin", 
+    name: "UserSignUp", 
     beforeMount: function() {
-        if(Cookies.get('user')) {
-            authStore.commit('loggedIn', JSON.parse(Cookies.get('user')));
-            this.$router.push({ name: 'Sessions' })
-        }
+        // authStore.state.loggedIn ? this.$router.push({ name: 'Session'}) : ""
     },
     mounted: function() {
         var full = window.location.host
@@ -65,17 +62,18 @@ export default {
         }
     },
     methods: {
-        logInUser: async function() {
+        signUpUser: async function() {
             try {
-                const { data } = await logInUser(this.email, this.password, capitalize(this.subdomain))
-                window.console.log(data);
-                await authStore.commit('loggedIn', data);
-                Cookies.set('user', data, { expires: 7 });
-                this.$router.push({ name: "Sessions"})
+                await signUpUser(this.email, this.password, capitalize(this.subdomain))
+                // authStore.commit('loggedIn')
+                // this.$router.push("/dashboard")
             }
             catch(err) {
                 alert(err)
             }
+        },
+        navigateTo: function() {
+            this.$router.push({ name: 'UserLogin' })
         }
     }
     

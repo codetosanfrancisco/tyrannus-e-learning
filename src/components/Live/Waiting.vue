@@ -6,12 +6,14 @@
             label="Email"
             required
             v-model="email"
+            :disabled="disabled"
         ></v-text-field>
         <v-text-field
             :rules="nameRules"
             label="Passcode"
             required
             v-model="passcode"
+            :disabled="disabled"
         ></v-text-field>
         <v-btn dark tile v-on:click="this.loginSession">Submit</v-btn>
         <v-btn dark tile v-on:click="this.enterRoom" :disabled="roomActive">Enter room</v-btn>
@@ -26,6 +28,8 @@
 <script>
 import { loginSession, getWaiting, logoutSession } from "@/lib/mongodb/video-session/index";
 import io from 'socket.io-client';
+import authStore from "@/lib/vuex/store/authStore";
+import { getSession } from "@/lib/Live/index";
 
 export default {
     name: 'Waiting',
@@ -35,18 +39,29 @@ export default {
             email: '',
             sessionId: '',
             participants: [],
-            roomActive: true
+            roomActive: true,
+            disabled: true
         }
     },
     async created() {
         const self = this;
         this.sessionId = this.$route.params.id;
-        window.addEventListener('beforeunload', this.logoutSession);
+        const email = authStore.state.user.email;
+        const { data: { sessionData }} = await getSession(this.sessionId);
         try {
             const { data } = await getWaiting(this.sessionId);
+            window.console.log(data);
             this.participants = data.participants;
             this.roomActive = !data.roomActive
             this.$store.commit('MAKE_ROOM_ACTIVE', data)
+            let passcode;
+            if(sessionData.lecturers.filter(lecturer => lecturer.email == email).length > 0) {
+                passcode = sessionData.lecturers.filter(lecturer => lecturer.email == email)[0].passcode
+            } else if(sessionData.students.filter(student => student.email == email).length > 0) {
+                passcode = sessionData.students.filter(student => student.email == email)[0].passcode
+            } 
+            this.passcode = passcode;
+            this.email = email
         } catch(e) {
             alert(e);
         }
@@ -63,6 +78,7 @@ export default {
             self.roomActive = !data.roomActive;
             self.$store.commit('MAKE_ROOM_ACTIVE', data)
         })
+        window.addEventListener('beforeunload', this.logoutSession);
     },
     methods: {
         loginSession: async function() {

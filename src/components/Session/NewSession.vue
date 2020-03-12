@@ -46,21 +46,21 @@
 
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-                <ejs-timepicker :min='minTime' v-model="form.time" placeholder="Pick a time" name="Time" data-required-message="* Pick the time of the session" required="" data-msg-containerid="timeError"></ejs-timepicker>
+                <ejs-timepicker v-model="form.time" placeholder="Pick a time" name="Time" data-required-message="* Pick the time of the session" required="" data-msg-containerid="timeError"></ejs-timepicker>
             </div>
             <div id="timeError"></div>
         </div>
 
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-                <ejs-dropdownlist :dataSource='sportsData' v-model="form.lecturers" id='dropdownlist' placeholder="Pick a lecturer" name="Lecturer" data-required-message="* Pick a lecturer for the session" required="" data-msg-containerid="lecturerError"></ejs-dropdownlist>
+                <ejs-dropdownlist :dataSource='lecturerDatas' @change="handleChange" v-model="form.lecturers" id='dropdownlist' placeholder="Pick a lecturer" name="Lecturer" data-required-message="* Pick a lecturer for the session" required="" data-msg-containerid="lecturerError"></ejs-dropdownlist>
             </div>
             <div id="lecturerError"></div>
         </div>
 
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-              <ejs-multiselect id='multiselect' :dataSource='sportsDatas' v-model="form.students" placeholder="Select a game" mode="CheckBox" :fields='fields' :showSelectAll='showSelectAll' selectAllText="Select All" unSelectAllText="unSelect All" name="Students" data-required-message="* Pick students" required="" data-msg-containerid="studentsError"></ejs-multiselect>  
+              <ejs-multiselect id='multiselect' :dataSource='studentDatas' v-model="form.students" placeholder="Select students" mode="CheckBox" :fields='fields' :showSelectAll='showSelectAll' selectAllText="Select All" unSelectAllText="unSelect All" name="Students" data-required-message="* Pick students" required="" data-msg-containerid="studentsError"></ejs-multiselect>  
             </div>
             <div id="studentsError"></div>
         </div>
@@ -80,14 +80,6 @@
 
 <script>
 import Vue from 'vue';
-import "@syncfusion/ej2-base/styles/material.css";
-import "@syncfusion/ej2-vue-dropdowns/styles/material.css";
-import "@syncfusion/ej2-buttons/styles/material.css";
-import "@syncfusion/ej2-vue-inputs/styles/material.css";
-import  '@syncfusion/ej2-inputs/styles/material.css';
-import  '@syncfusion/ej2-popups/styles/material.css';
-import  '@syncfusion/ej2-lists/styles/material.css';
-import  "@syncfusion/ej2-vue-calendars/styles/material.css";
 import { TextBoxPlugin } from '@syncfusion/ej2-vue-inputs';
 import { MultiSelectPlugin,} from '@syncfusion/ej2-vue-dropdowns';
 import { MultiSelect, CheckBoxSelection } from '@syncfusion/ej2-dropdowns';
@@ -96,6 +88,7 @@ import { DropDownListPlugin } from '@syncfusion/ej2-vue-dropdowns';
 import { createSession } from '@/lib/mongodb/session/index'
 import { FormValidator  } from '@syncfusion/ej2-vue-inputs';
 import { TimePickerPlugin } from "@syncfusion/ej2-vue-calendars";
+import { getUsers } from "@/lib/mongodb/users/index";
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.css';
 MultiSelect.Inject(CheckBoxSelection);
@@ -117,21 +110,10 @@ export default {
         fields : { text: 'Game', value: 'Id' },
         showSelectAll : true,
         dialog: false,
-        sportsDatas: [
-        { Id: 'game1', Game: 'Badminton' },
-        { Id: 'game2', Game: 'Football' },
-        { Id: 'game3', Game: 'Tennis' },
-        { Id: 'game4', Game: 'Golf' },
-        { Id: 'game5', Game: 'Cricket' },
-        { Id: 'game6', Game: 'Handball' },
-        { Id: 'game7', Game: 'Karate' },
-        { Id: 'game8', Game: 'Fencing' },
-        { Id: 'game9', Game: 'Boxing' }
-      ],
-        sportsData: ['Badminton', 'Cricket', 'Football', 'Golf', 'Tennis'],
+        studentDatas: [],
+        lecturerDatas: [],
         waterMark : 'Select a datetime',
         minDate : new Date(new Date().getFullYear(), new Date().getMonth(),new Date().getDate() ,  new Date().getHours()),
-        minTime: new Date(new Date().getFullYear(), new Date().getMonth(),new Date().getDate() ,  new Date().getHours()),
         dateFormat : 'yyyy-MM-dd',
         // selectedDate: new Date(),
         agenda: "The agenda of this session is ...",
@@ -140,8 +122,6 @@ export default {
         showError: false,
         showSuccess: false,
         errorMessage: "You have another session booking overlapped.",
-        mentorItems: ["mentor1@gmail.com", "mentor2@gmail.com", "mentor3@gmail.com"],
-        participantItems: ["mentee1@gmail.com", "mentee2@gmail.com", "mentee3@gmail.com"],
         form: {
           title: '',
           date: new Date(),
@@ -151,6 +131,7 @@ export default {
           agenda: ''
         },
         disableSubmit: true,
+        originalStudentDatas: [],
         options : {
         //Initialize the CustomPlacement.
           customPlacement: function(inputElement, errorElement) {
@@ -178,6 +159,10 @@ export default {
       }
     },
     methods: {
+      handleChange: function(event) {
+        this.form.students = [];
+        this.studentDatas = this.originalStudentDatas.filter(student => student.Id != event.value);
+      },
       onFormSubmit: async function() {
             let formStatus = this.formObj.validate();
             if (formStatus) {
@@ -204,19 +189,43 @@ export default {
         this.$router.push({ name })
       }
     },
-    mounted() {
+    mounted: async function() {
       let localObj = this;
-       this.formObj = new FormValidator('#form1', this.options);
-        document.getElementById('submit-btn').onclick = function(e) {
-            e.preventDefault()
-            localObj.onFormSubmit();
-        };
+      this.formObj = new FormValidator('#form1', this.options);
+      document.getElementById('submit-btn').onclick = function(e) {
+          e.preventDefault()
+          localObj.onFormSubmit();
+      };
+      let { data: students } = await getUsers('student');
+      let { data: lecturers } = await getUsers('lecturer');
+      students = students.map(student => {
+        return { Id: student.email, Game: student.email }
+      });
+      lecturers = lecturers.map(lecturer => {
+        return lecturer.email
+      })
+      this.studentDatas = students;
+      this.originalStudentDatas = students;
+
+      this.lecturerDatas = lecturers;
+      window.console.log("STUDENTS", students)
     }
 }
 </script>
 
 
-<style scoped>
+<style>
+@import "../../../node_modules/@syncfusion/ej2-base/styles/material.css";
+@import "../../../node_modules/@syncfusion/ej2-vue-dropdowns/styles/material.css";
+@import "../../../node_modules/@syncfusion/ej2-buttons/styles/material.css";
+@import "../../../node_modules/@syncfusion/ej2-vue-inputs/styles/material.css";
+@import  '../../../node_modules/@syncfusion/ej2-inputs/styles/material.css';
+@import  '../../../node_modules/@syncfusion/ej2-popups/styles/material.css';
+@import  '../../../node_modules/@syncfusion/ej2-lists/styles/material.css';
+@import  "../../../node_modules/@syncfusion/ej2-vue-calendars/styles/material.css";
+@import '../../../node_modules/@syncfusion/ej2-base/styles/material.css';
+@import '../../../node_modules/@syncfusion/ej2-vue-layouts/styles/material.css';
+
 .start {
   border-bottom: 1px solid grey;
   width: 100%;

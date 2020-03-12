@@ -43,9 +43,9 @@
         </v-card>
     </v-dialog>
     <div class="live-navbar">
-        <div v-if="isMentor">
+        <div v-if="isLecturer">
             Lecturer Portal - Management - Prof Dr. Paul Cheng
-            <v-btn v-if="isMentor" tile color="indigo" @click="library = !library">Upload</v-btn>
+            <v-btn v-if="isLecturer" tile color="indigo" @click="library = !library">Upload</v-btn>
         </div>
         <div v-else>
             Student Portal - Management - David Lin
@@ -56,7 +56,7 @@
         <div v-bind:class="{workspace: true }">
             <v-overlay
                 :absolute="true"
-                :value="isMentor ? false : true"
+                :value="isLecturer ? false : true"
                 color="transparent"
             >
             </v-overlay>
@@ -83,7 +83,7 @@
                         >
                             <div v-if="item.name == 'SCREENSHARE'" style="height: 100%; " class="screen-share">
                                 <div class="screen-children" id="screen-preview" ></div>
-                                 <div class="share-my-screen" v-if="isMentor">
+                                 <div class="share-my-screen" v-if="isLecturer">
                                     <v-btn color="green darken-1" tile @click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
                                     <v-btn color="red darken-1" tile @click="stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
                                     <v-btn color="green darken-1" tile @click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
@@ -91,7 +91,7 @@
                             </div>
                             <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'DRAWING'">
                                 <div class="signature-pad">
-                                    <drawing-board id="hello" :datas="datas" :email="email" :sessionId="getSessionId"></drawing-board>
+                                    <drawing-board id="hello" :datas="datas" :role="role" :sessionId="getSessionId" :email="email"></drawing-board>
                                 </div>
                             </div>
                             <div class="screen-children testing" id="screen-preview" v-if="item.name == 'TEXTEDITOR'">
@@ -140,17 +140,17 @@
             </div>
         </div>
         <div class="videos">
-            <div class="mentor-container">
-                <div id="mentor-0" class="mentor">
-                    <div class="zero-mentor-label">{{ zeroMentor.email }}</div>
+            <div class="lecturer-container">
+                <div id="lecturer-0" class="lecturer">
+                    <div class="zero-lecturer-label">{{ zerolecturer.email }}</div>
                 </div>
             </div>
-            <div class="mentees-container">
-                <div v-for="item in menteesRole" v-bind:key="item" :id="item.role" class="mentee">
+            <div class="students-container">
+                <div v-for="item in studentsRole" v-bind:key="item" :id="item.role" class="student">
                     <div class="video-label">
-                        <div class="mentee-control-buttons">
-                            <v-btn color="white" fab v-if="isMentor && item.mute" @click="turnMenteeOn(item.role)"><v-icon class="video-call" dark>mic_off</v-icon></v-btn>
-                            <v-btn color="white" fab v-if="isMentor && !item.mute" @click="turnMenteeOff(item.role)"><v-icon class="video-call" dark>mic</v-icon></v-btn>
+                        <div class="student-control-buttons">
+                            <v-btn color="white" fab v-if="isLecturer && item.mute" @click="turnStudentOn(item.role)"><v-icon class="video-call" dark>mic_off</v-icon></v-btn>
+                            <v-btn color="white" fab v-if="isLecturer && !item.mute" @click="turnStudentOff(item.role)"><v-icon class="video-call" dark>mic</v-icon></v-btn>
                             <div class="video-label-email">{{ item.email }}</div>
                         </div>
                     </div>
@@ -178,7 +178,7 @@
 import { getSession } from "@/lib/Live/index";
 import { initializeSession, checkScreenSharing, initializeScreenSharing } from "@/lib/opentok/index"
 import { logoutSession } from "@/lib/mongodb/video-session/index";
-import { sendMessage, getMessages } from '@/lib/mongodb/messages/index'
+import { sendMessage } from '@/lib/mongodb/messages/index'
 import { sendEditorText } from "@/lib/mongodb/video-session/editor/index"
 import { sendNewTab, sendSwapTab } from "@/lib/mongodb/video-session/tab/index"
 import io from 'socket.io-client';
@@ -186,7 +186,7 @@ import { quillEditor } from 'vue-quill-editor'
 import $ from 'jquery';
 import DrawingBoard from "./DrawingBoard.vue"
 import myEmitter from './resources/events';
-import { turnMenteeOn, turnMenteeOff } from "@/lib/mongodb/video-session/audio/index"
+import { turnStudentOn, turnStudentOff } from "@/lib/mongodb/video-session/audio/index"
 import { sendVideoLink, sendVideoEvent } from "@/lib/mongodb/video-session/video/index"
 import { sendFileLink, submitPdf } from "@/lib/mongodb/video-session/file/index"
 
@@ -197,6 +197,9 @@ const DRAWING = 'DRAWING';
 const TEXTEDITOR = 'TEXTEDITOR';
 const YOUTUBE = 'YOUTUBE';
 
+const isLecturerMou = (role) => {
+    return role.split("-")[0] == 'lecturer'
+}
 
 
 const tabOptions = new Map([
@@ -258,13 +261,15 @@ export default {
         try {
             const self = this;
             this.sessionId = this.$route.params.id;
-            const { data: { token, sessionData: { mentors, mentees, sessionId } }} = await getSession(this.sessionId);
-            window.console.log(mentors,mentees, sessionId, token)
+            const { data: { token, sessionData: { lecturers, students, sessionId } }} = await getSession(this.sessionId);
+            window.console.log(lecturers,students, sessionId, token)
             this.email = self.$store.getters.currentSession.email;
             this.role = self.$store.getters.currentSession.role;
-            this.menteesRole = mentees.filter(mentee => mentee.active == true && mentee.email != this.email).map(mentee => { return {role: mentee.role, email: mentee.email, mute: true} });
-            this.zeroMentor = mentors.filter(mentor => mentor.role == "mentor-0")[0];
-            const messageData = await getMessages('Startup', this.sessionId);
+            window.console.log(this.role, this.role.split('-'))
+            this.studentsRole = students.filter(student => student.active == true && student.email != this.email).map(student => { return {role: student.role, email: student.email, mute: true} })
+            this.zerolecturer = lecturers.filter(lecturer => lecturer.role == "lecturer-0")[0];
+            window.console.log(this.studentsRole, this.zerolecturer)
+            //const messageData = await getMessages('Startup', this.sessionId);
             const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
             
 
@@ -277,16 +282,16 @@ export default {
                 self.publisher = publisher;
                 self.session = session;
 
-                if(!self.isMentor) {
+                if(!self.isLecturer) {
                     self.publisher.publishAudio(false);
                     self.muted = true;
                 }
             });
             
     
-            socket.on('message', function(data) {
-                self.messages = data;
-            });
+            // socket.on('message', function(data) {
+            //     self.messages = data;
+            // });
             socket.on('drawing', function(data) {
                 window.console.log("Drawing",data)
                 myEmitter.emit('event', data)
@@ -319,7 +324,7 @@ export default {
                 }
             })
 
-            socket.on('turn-mentee-on', function(data) {
+            socket.on('turn-student-on', function(data) {
                 window.console.log(data)
                 if(data.role == self.role) {
                     window.console.log(data)
@@ -328,7 +333,7 @@ export default {
                 }
             })
 
-            socket.on('turn-mentee-off', function(data) {
+            socket.on('turn-student-off', function(data) {
                 window.console.log(data)
                 if(data.role == self.role) {
                     self.publisher.publishAudio(false);
@@ -386,15 +391,15 @@ export default {
                 }
             })
             
-            this.messages = messageData.data.messages;
+            //this.messages = messageData.data.messages;
 
             $(document).on('click', '.quill-editor', function() {
-                if(!self.isMentor) return
+                if(!self.isLecturer) return
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
 
              $(document).on('keyup', '.quill-editor', function() {
-                 if(!self.isMentor) return
+                 if(!self.isLecturer) return
                 sendEditorText(self.content, 1, self.sessionId, self.email)
             })
         }
@@ -416,9 +421,9 @@ export default {
             sessionId: '',
             message: '',
             socket: null,
-            messages: [],
-            menteesRole: [],
-            zeroMentor: null,
+            //messages: [],
+            studentsRole: [],
+            zerolecturer: null,
             showEndSession: false,
             showAddTab: false,
             library: false,
@@ -530,14 +535,14 @@ export default {
             ]
         },
         addYoutube: async function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.setNewTab(this.returnWantedTab(YOUTUBE));
             this.sendNewTab(YOUTUBE)
             this.setActiveTab();
             this.hideAddTabModal();
         },
         addScreenShare: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             if(checkScreenSharing()) {
                 this.setNewTab(this.returnWantedTab(SCREENSHARE));
                 this.hideAddTabModal();
@@ -548,7 +553,7 @@ export default {
             }
         },
         addEditor: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.setNewTab(this.returnWantedTab(TEXTEDITOR));
             this.hideAddTabModal();
             this.sendNewTab(TEXTEDITOR);
@@ -572,7 +577,7 @@ export default {
             this.setActiveTab();
         },
         addWhiteBoard: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.setNewTab(this.returnWantedTab(DRAWING));
             this.hideAddTabModal();
             this.setActiveTab();
@@ -616,11 +621,11 @@ export default {
             this.showEndSession = false;
         },
         showAddTabModal () {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.showAddTab = true;
         },
         hideAddTabModal () {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.showAddTab = false;
         },
         endSession: async function() {
@@ -637,7 +642,7 @@ export default {
             }
         },
         initializeScreenSharing: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             if(checkScreenSharing()) {
                 this.screenSharingPublisher = initializeScreenSharing(this.session)
                 this.sharingMyScreen = true
@@ -647,13 +652,13 @@ export default {
         },
         // Try stop screen sharing: Unpublish it, continue screen sharing: initialize again
         stopScreenSharing: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.sharingMyScreen = false; 
             //this.session.unpublish(this.screenSharingPublisher);
             this.screenSharingPublisher.publishVideo(false);
         },
         continueScreenSharing: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.screenSharingPublisher.publishVideo(true);
         },
         displayFile: async function(index) {
@@ -674,15 +679,15 @@ export default {
             this.setActiveTab();
         },
         setActiveTab: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.active_tab = this.workSpaceTabs.length - 1;
         },
         sendNewTab: function(tabName) {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             sendNewTab(tabName, this.sessionId, this.email);
         },
         handleTabChange: function(i) {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             sendSwapTab(i, this.sessionId, this.email)
         },
         muteButton: function() {
@@ -690,34 +695,35 @@ export default {
             this.muted = true
         },
         unmuteButton: function() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.publisher.publishAudio(true); 
             this.muted = false;
         },
-        addMentee: function(role, email) {
-            window.console.log("this.menteesRole", this.menteesRole)
-            this.menteesRole = [...this.menteesRole, { role, email, mute: true}]
+        addStudent: function(role, email) {
+            window.console.log("this.studentsRole", this.studentsRole)
+            this.studentsRole = [...this.studentsRole, { role, email, mute: true}]
         },
-        removeMentee: function(role) {
-            this.menteesRole = this.menteesRole.filter(mentee => mentee.role !== role);
+        removeStudent: function(role) {
+            this.studentsRole = this.studentsRole.filter(student => student.role !== role);
         },
-        turnMenteeOn: function(role) {
-            let menteeNum = this.menteesRole.findIndex(mentee => mentee.role == role);
-            let mentee = this.menteesRole[menteeNum];
-            mentee.mute = false;
-            let mentees = this.menteesRole;
-            mentees[menteeNum] = mentee;
-            this.menteesRole = mentees;
-            turnMenteeOn(role, this.sessionId);
+        turnStudentOn: function(role) {
+            let studentNum = this.studentsRole.findIndex(student => student.role == role)
+            let student = this.studentsRole[studentNum];
+            student.mute = false;
+            let students = this.studentsRole;
+            students[studentNum] = student;
+            window.console.log(studentNum, students);
+            this.studentsRole = students;
+            turnStudentOn(role, this.sessionId);
         },
-        turnMenteeOff: function(role) {
-            let menteeNum = this.menteesRole.findIndex(mentee => mentee.role == role);
-            let mentee = this.menteesRole[menteeNum];
-            mentee.mute = true;
-            let mentees = this.menteesRole;
-            mentees[menteeNum] = mentee;
-            this.menteesRole = mentees;
-           turnMenteeOff(role, this.sessionId);
+        turnStudentOff: function(role) {
+            let studentNum = this.studentsRole.findIndex(student => student.role == role);
+            let student = this.studentsRole[studentNum];
+            student.mute = true;
+            let students = this.studentsRole;
+            students[studentNum] = student;
+            this.studentsRole = students;
+           turnStudentOff(role, this.sessionId);
         },
         searchVideo: function() {
             if(this.youtubeId.trim().length > 0) {
@@ -734,8 +740,9 @@ export default {
         getSessionId() {
             return this.sessionId
         },
-        isMentor() {
-            return this.$store.getters.currentSession.email == "mentor1@gmail.com"
+        isLecturer() {
+            window.console.log("THIS.ROLE",this.$store.getters.currentSession.role)
+            return isLecturerMou(this.$store.getters.currentSession.role)
         },
         player() {
             return this.$refs.youtube.player

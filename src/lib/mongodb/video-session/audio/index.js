@@ -1,4 +1,4 @@
-import turnMenteeOn from "./turnMenteeOn";
-import turnMenteeOff from "./turnMenteeOff";
+import turnStudentOn from "./turnStudentOn";
+import turnStudentOff from "./turnStudentOff";
 
-export { turnMenteeOff, turnMenteeOn }
+export { turnStudentOff, turnStudentOn }

@@ -4,6 +4,7 @@ import "@/lib/cssLoader/index"
 import "@/lib/form/index"
 import "@/lib/vuex/index"
 import store from "@/store/index"
+import authStore from "@/lib/vuex/store/authStore"
 import router from "@/lib/router/index"
 import vuetify from './lib/vuetify'
 import VModal from 'vue-js-modal'
@@ -27,6 +28,16 @@ import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
 import 'video.js/dist/video-js.css'
 import 'vue-loaders/dist/vue-loaders.css';
+// import "@syncfusion/ej2-base/styles/material.css";
+// import "@syncfusion/ej2-vue-dropdowns/styles/material.css";
+// import "@syncfusion/ej2-buttons/styles/material.css";
+// import "@syncfusion/ej2-vue-inputs/styles/material.css";
+// import  '@syncfusion/ej2-inputs/styles/material.css';
+// import  '@syncfusion/ej2-popups/styles/material.css';
+// import  '@syncfusion/ej2-lists/styles/material.css';
+// import  "@syncfusion/ej2-vue-calendars/styles/material.css";
+// import '@syncfusion/ej2-base/styles/material.css';
+// import '@syncfusion/ej2-vue-layouts/styles/material.css';
  
 Vue.use(VueSignaturePad);
 Vue.component('carousel', OwlCarousel)
@@ -53,5 +64,6 @@ new Vue({
   router,
   vuetify,
   store,
+  authStore,
   render: h => h(App)
 })

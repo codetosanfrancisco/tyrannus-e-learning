@@ -16,8 +16,8 @@
                 </v-col>
             </v-row>
         </div>
-        <div style="display: flex; flex-direction: column; padding: 30px 40px; height: 95vh; overflow: scroll; " v-on:scroll.passive="handleScroll">
-            <v-row no-gutters style="flex-grow: 1; ">
+        <div style="padding: 30px 40px; height: 95vh; overflow: scroll; " v-on:scroll.passive="handleScroll">
+            <v-row no-gutters>
                 <v-col
                     :key="1"
                     :cols="11"
@@ -30,51 +30,19 @@
                 >
                    <v-btn text>View All</v-btn>
                 </v-col>
-                <div style="display: flex; padding: 20px 0; flex-wrap: wrap; ">
-                    <div class="e-card" @click="navigateTo(1)">
+                <div style="display: flex; padding: 20px 0; flex-wrap: wrap; justify-content: flex-start; flex-grow: 1; ">
+                    <div v-for="(session, index) in sessions" v-bind:key="session" class="e-card" @click="navigateTo(index)">
                         <div class="e-card-image">
-                            <div class="e-card-title">Introduction to Theology </div>
+                            <div class="e-card-title">{{ session.title }} </div>
                         </div>
                         <div class="e-card-content"> 
-                            <div>8 March 2020, 2pm</div>
+                            <div>{{ new Date(session.date).getDate() + '/' + new Date(session.date).getMonth() + '/' + new Date(session.date).getFullYear() }}, {{ new Date(session.date).getHours() + ":" + new Date(session.date).getMinutes()}}</div>
                         </div>
                     </div>
-                    <div class="e-card">
-                        <div class="e-card-image">
-                            <div class="e-card-title">Introduction to Theology </div>
-                        </div>
-                        <div class="e-card-content"> 
-                            <div>8 March 2020, 2pm</div>
-                        </div>
-                    </div>
-                    <div class="e-card">
-                        <div class="e-card-image">
-                            <div class="e-card-title">Introduction to Theology </div>
-                        </div>
-                        <div class="e-card-content"> 
-                            <div>8 March 2020, 2pm</div>
-                        </div>
-                    </div>
-                    <div class="e-card">
-                        <div class="e-card-image">
-                            <div class="e-card-title">Introduction to Theology </div>
-                        </div>
-                        <div class="e-card-content"> 
-                            <div>8 March 2020, 2pm</div>
-                        </div>
-                    </div>
-                    <div class="e-card">
-                        <div class="e-card-image">
-                            <div class="e-card-title">Introduction to Theology </div>
-                        </div>
-                        <div class="e-card-content"> 
-                            <div>8 March 2020, 2pm</div>
-                        </div>
-                    </div>
-            </div>
+                </div>
             </v-row>
             
-            <v-row no-gutters style="flex-grow: 1; ">
+            <!-- <v-row no-gutters style="flex-grow: 1; ">
                 <v-col
                     :key="1"
                     :cols="11"
@@ -123,10 +91,10 @@
                     </div>
                 </div>
             </div>
-            </v-row>
+            </v-row> -->
             
 
-            <v-row no-gutters style="flex-grow: 1; ">
+            <!-- <v-row no-gutters style="flex-grow: 1; ">
                 <v-col
                     :key="1"
                     :cols="11"
@@ -161,20 +129,37 @@
                     
                 </div>
             </div>
-            </v-row>
+            </v-row> -->
             
         </div>
     </div>
 </template>
 
 <script>
-import '@syncfusion/ej2-base/styles/material.css';
-import '@syncfusion/ej2-vue-layouts/styles/material.css';
-
 //import FixedHeader from 'vue-fixed-header'
+import { getAllSessions } from "@/lib/mongodb/session/index";
+import { authStore } from "@/lib/vuex/store/index"
 
 export default {
     components: {
+    },
+    mounted: async function() {
+        try {
+            let { data } = await getAllSessions();
+            if(!authStore.state.user.role.includes('admin')) {
+                data = data.filter(session => {
+                    const lArray = session.lecturers[0].email
+                    const array = session.students.map(s => s.email ).concat(lArray)
+
+                    window.console.log(session.lecturers[0]._id,session.students, array.includes(authStore.state.user.email))
+
+                    return array.includes(authStore.state.user.email)
+                })
+            }
+            this.sessions = data;
+        } catch(e) {
+            alert(e);
+        }
     },
     created: function() {
         window.addEventListener("scroll", this.handleScroll);
@@ -185,12 +170,14 @@ export default {
     data() {
         return {
             scrolled: false,
-            lastPosition: 0
+            lastPosition: 0,
+            sessions: []
         }
     },
     methods: {
-        navigateTo(id) {
-            this.$router.push({ name: 'Session', params: {id: id}})
+        navigateTo(i) {
+            const data = this.sessions[i]
+            this.$router.push({ name: 'Waiting', params: {id: data._id }})
         },
         handleScroll(e) {
             window.console.log(this.scrolled, window.scrollY, e)

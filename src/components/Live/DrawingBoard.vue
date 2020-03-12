@@ -84,6 +84,11 @@ import { sendDrawing } from "@/lib/mongodb/video-session/drawing/index"
 import myEmitter from "./resources/events";
 import Konva from "konva";
 
+const isLecturer = (role) => {
+    return role.split("-")[0] == 'lecturer'
+}
+  
+
 class Draw {
 
     setMode(mode) {
@@ -113,12 +118,14 @@ class Draw {
         })
     }
 
-    constructor(id, sessionId, email){
+    constructor(id, sessionId, role, email){
         this.sessionId = sessionId;
-        this.email = email
+        this.role = role;
+        this.isLecturer = false;
         this.mode = 'brush'
         this.color = '#a713f7';
         this.width = 6;
+        this.email = email;
         var width = window.innerWidth;
         var height = window.innerHeight - 25;
 
@@ -132,14 +139,15 @@ class Draw {
         this.layer = new Konva.Layer();
         this.stage.add(this.layer);
 
-        if(email == 'mentor1@gmail.com') {
-            this.setUpMentorPrivilege();
+        if(isLecturer(this.role)) {
+            this.isLecturer = true;
+            this.setUplecturerPrivilege();
             this.stage.container().style.cursor = 'crosshair';
         }
     }
 
 
-    setUpMentorPrivilege() {
+    setUplecturerPrivilege() {
         var self = this;
         this.isPaint = false;
         this.lastLine;
@@ -158,14 +166,14 @@ class Draw {
         });
 
         this.stage.on('mouseup touchend', function() {
-            if(self.email !== "mentor1@gmail.com") return
+            if(!self.isLecturer) return
             sendDrawing(self.stage.toJSON(),1, self.sessionId, self.email)
             self.isPaint = false;
         });
 
         // and core function - drawing
         this.stage.on('mousemove touchmove', function() {
-            if(self.email !== "mentor1@gmail.com") return
+            if(!self.isLecturer) return
             if (!self.isPaint) {
             return;
             }
@@ -178,9 +186,10 @@ class Draw {
     }
 
 }
+
 export default {
     name: 'drawing-board',
-    props: ['id', 'datas', 'email', 'sessionId'],
+    props: ['id', 'datas', 'role', 'sessionId', 'email'],
     data: function () {
         return {
                 colors: [
@@ -216,7 +225,7 @@ export default {
             }
         },
     mounted() {
-        this.draw = new Draw(this.id, this.sessionId, this.email);
+        this.draw = new Draw(this.id, this.sessionId, this.role, this.email);
          myEmitter.on('event', (data) => {
             window.console.log("Latata", data);
             if(data.email !== this.email) {
@@ -227,35 +236,35 @@ export default {
     },
     methods: {
         setPenSize(index) {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.draw.setWidth(this.penSizes[index]);
         },
         activatePen() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.draw.setMode("brush")
         },
         activateEraser() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.draw.setMode("eraser")
         },
         setEraserSize(index) {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.draw.setWidth(this.eraserSize[index]);
         },
         setColor(index) {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.draw.setColor(this.colors[index]);
         },
         clearCanvas() {
-            if(!this.isMentor) return
+            if(!this.isLecturer) return
             this.draw.getLayer().destroyChildren();
             this.draw.getLayer().batchDraw();
             sendDrawing(this.draw.getStage().toJSON(), 1, this.sessionId,this.email)
         }
     },
     computed: {
-        isMentor() {
-            return this.email == "mentor1@gmail.com"
+        isLecturer() {
+            return isLecturer(this.role)
         }
     }
 }

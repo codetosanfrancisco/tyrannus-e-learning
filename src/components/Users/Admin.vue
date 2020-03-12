@@ -46,8 +46,7 @@
       </v-navigation-drawer>
       <v-data-table
     :headers="headers"
-    :items="desserts"
-    sort-by="calories"
+    :items="admins"
     class="elevation-1"
   >
     <template v-slot:top>
@@ -61,7 +60,7 @@
         <v-spacer></v-spacer>
         <v-dialog v-model="dialog" max-width="500px">
           <template v-slot:activator="{ on }">
-            <v-btn color="primary" dark class="mb-2" v-on="on">New Item</v-btn>
+            <v-btn color="primary" dark class="mb-2" v-on="on">New Admin</v-btn>
           </template>
           <v-card>
             <v-card-title>
@@ -71,21 +70,15 @@
             <v-card-text>
               <v-container>
                 <v-row>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.name" label="Dessert name"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.calories" label="Calories"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.fat" label="Fat (g)"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.carbs" label="Carbs (g)"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.protein" label="Protein (g)"></v-text-field>
-                  </v-col>
+                  <v-data-table
+                    :headers="lheaders"
+                    :items="lecturers"
+                    class="elevation-1"
+                  >
+                  <template v-slot:item.addAsAdmin="{ item }">
+                      <v-simple-checkbox v-model="item.addAsAdmin"></v-simple-checkbox>
+                    </template>
+                  </v-data-table>
                 </v-row>
               </v-container>
             </v-card-text>
@@ -100,6 +93,13 @@
       </v-toolbar>
     </template>
     <template v-slot:item.action="{ item }">
+      <v-icon
+        small
+        class="mr-2"
+        @click="editItem(item)"
+      >
+        mdi-pencil
+      </v-icon>
       <v-icon
         small
         @click="deleteItem(item)"
@@ -117,10 +117,12 @@
 
 
 <script>
+import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/index";
+
   export default {
     data: () => ({
       dialog: false,
-      drawer: true,
+      drawer: false,
         items: [
           { title: 'Dashboard', icon: 'mdi-view-dashboard' },
           { title: 'Photos', icon: 'mdi-image' },
@@ -140,18 +142,26 @@
         background: false,
       headers: [
         {
-          text: 'Dessert (100g serving)',
+          text: 'No.',
           align: 'start',
           sortable: false,
-          value: 'name',
+          value: 'no',
         },
-        { text: 'Calories', value: 'calories' },
-        { text: 'Fat (g)', value: 'fat' },
-        { text: 'Carbs (g)', value: 'carbs' },
-        { text: 'Protein (g)', value: 'protein' },
-        { text: 'Actions', value: 'action', sortable: false },
+        { text: 'Email', value: 'email' },
+        { text: 'Action', value: 'action' }
       ],
-      desserts: [],
+      lheaders: [
+        {
+          text: 'No.',
+          align: 'start',
+          sortable: false,
+          value: 'no',
+        },
+        { text: 'Email', value: 'email' },
+        { text: 'Add As Admin', value: 'addAsAdmin' },
+      ],
+      admins: [],
+      lecturers: [],
       editedIndex: -1,
       editedItem: {
         name: '',
@@ -186,79 +196,28 @@
     },
 
     methods: {
-      initialize () {
-        this.desserts = [
-          {
-            name: 'Frozen Yogurt',
-            calories: 159,
-            fat: 6.0,
-            carbs: 24,
-            protein: 4.0,
-          },
-          {
-            name: 'Ice cream sandwich',
-            calories: 237,
-            fat: 9.0,
-            carbs: 37,
-            protein: 4.3,
-          },
-          {
-            name: 'Eclair',
-            calories: 262,
-            fat: 16.0,
-            carbs: 23,
-            protein: 6.0,
-          },
-          {
-            name: 'Cupcake',
-            calories: 305,
-            fat: 3.7,
-            carbs: 67,
-            protein: 4.3,
-          },
-          {
-            name: 'Gingerbread',
-            calories: 356,
-            fat: 16.0,
-            carbs: 49,
-            protein: 3.9,
-          },
-          {
-            name: 'Jelly bean',
-            calories: 375,
-            fat: 0.0,
-            carbs: 94,
-            protein: 0.0,
-          },
-          {
-            name: 'Lollipop',
-            calories: 392,
-            fat: 0.2,
-            carbs: 98,
-            protein: 0,
-          },
-          {
-            name: 'Honeycomb',
-            calories: 408,
-            fat: 3.2,
-            carbs: 87,
-            protein: 6.5,
-          },
-          {
-            name: 'Donut',
-            calories: 452,
-            fat: 25.0,
-            carbs: 51,
-            protein: 4.9,
-          },
-          {
-            name: 'KitKat',
-            calories: 518,
-            fat: 26.0,
-            carbs: 65,
-            protein: 7,
-          },
-        ]
+      initialize: async function() {
+        let { data: admins } = await getUsers('admin');
+        admins = admins.map((student, index) => {
+          return{
+            ...student, no: index + 1
+          }   
+        })
+
+        let { data: lecturers } = await getUsers('lecturer');
+        let lIds = lecturers.map(lecturer => lecturer._id);
+        let aIds = admins.map(admin => admin._id);
+        let difference = lIds.filter(x => !aIds.includes(x));
+        this.lecturers = lecturers.filter(lecturer => difference.includes(lecturer._id)).map((lecturer, index) => {
+          return {
+            ...lecturer,
+            no: index + 1,
+            addAsAdmin: false,
+          }
+        })
+        window.console.log(difference)
+        this.admins = admins;
+        window.console.log("Nani", this.admins, this.lecturers);
       },
 
       editItem (item) {
@@ -267,9 +226,14 @@
         this.dialog = true
       },
 
-      deleteItem (item) {
-        const index = this.desserts.indexOf(item)
-        confirm('Are you sure you want to delete this item?') && this.desserts.splice(index, 1)
+      deleteItem: async function(item) {
+        try { 
+          if(item.role.includes('admin')) return;
+          await removeUserRole(item._id, 'admin');
+        }
+        catch(e) {
+          alert(e)
+        }
       },
 
       close () {
@@ -280,13 +244,20 @@
         }, 300)
       },
 
-      save () {
-        if (this.editedIndex > -1) {
-          Object.assign(this.desserts[this.editedIndex], this.editedItem)
-        } else {
-          this.desserts.push(this.editedItem)
+      save: async function() {
+        window.console.log(this.lecturers);
+        const newAdmins = this.lecturers.filter(lecturer => lecturer.addAsAdmin).map(lecturer => {
+          return lecturer._id;
+        })
+        window.console.log("New Admin", newAdmins)
+        //Update as lecturer
+        try {
+          await updateUserRole(newAdmins, 'admin')
+          this.close()
+        } catch(e) {
+          window.console.log(e)
+          this.close()
         }
-        this.close()
       },
     },
   }
