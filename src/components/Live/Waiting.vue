@@ -1,5 +1,6 @@
 <template>
     <div>
+        <v-btn tile @click="navigateBack">Back to All Classes</v-btn>
         <div>Waiting Room #{{ this.sessionId }}</div>
         <v-text-field
             :rules="nameRules"
@@ -15,13 +16,13 @@
             v-model="passcode"
             :disabled="disabled"
         ></v-text-field>
-        <v-btn dark tile v-on:click="this.loginSession">Submit</v-btn>
-        <v-btn dark tile v-on:click="this.enterRoom" :disabled="roomActive">Enter room</v-btn>
+        <v-btn dark tile v-on:click="this.loginSession">Enter Room</v-btn>
+        <!-- <v-btn dark tile v-on:click="this.enterRoom" :disabled="roomActive">Enter room</v-btn> -->
 
-        <div>Currently in the room: </div>
+        <!-- <div>Currently in the room: </div>
         <div>
             <div v-for="item in participants" v-bind:key="item.email">{{item.email}}</div>
-        </div>
+        </div> -->
     </div>
 </template>
 
@@ -82,14 +83,18 @@ export default {
     },
     methods: {
         loginSession: async function() {
+            var self = this;
             window.console.log(this.email, this.passcode, this.sessionId);
             const { data: {email, isLoggedIn, role }} = await loginSession(this.sessionId, 'Startup', this.email, this.passcode);
             window.console.log("isLoggedIn", isLoggedIn, email, role);
             if(isLoggedIn) {
-                this.$store.commit('LOGIN_CURRENT_SESSION', {
+                window.console.log("ISLOGGEDIN",isLoggedIn);
+                this.$store.dispatch('login_session', {
                     email, 
                     role,
                     sessionId: this.sessionId
+                }).then(function() {
+                    self.$router.push(`/live/${self.sessionId}`)
                 })
             }
         },
@@ -101,6 +106,9 @@ export default {
         },
         enterRoom: function() {
             this.$router.push(`/live/${this.sessionId}`)
+        },
+        navigateBack() {
+            this.$router.push({ name: 'Sessions' })
         }
     }
 }

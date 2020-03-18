@@ -22,7 +22,7 @@
                     :key="1"
                     :cols="11"
                 >
-                   <div style="font-size: 1.5em; font-weight: 200; ">>Today's session </div>
+                   <div style="font-size: 1.5em; font-weight: 200; ">>All Class </div>
                 </v-col>
                 <v-col
                     :key="1"
@@ -30,7 +30,7 @@
                 >
                    <v-btn text>View All</v-btn>
                 </v-col>
-                <div style="display: flex; padding: 20px 0; flex-wrap: wrap; justify-content: flex-start; flex-grow: 1; ">
+                <div v-if="sessions.length > 0" style="display: flex; padding: 20px 0; flex-wrap: wrap; justify-content: flex-start; flex-grow: 1; ">
                     <div v-for="(session, index) in sessions" v-bind:key="session" class="e-card" @click="navigateTo(index)">
                         <div class="e-card-image">
                             <div class="e-card-title">{{ session.title }} </div>
@@ -39,6 +39,9 @@
                             <div>{{ new Date(session.date).getDate() + '/' + new Date(session.date).getMonth() + '/' + new Date(session.date).getFullYear() }}, {{ new Date(session.date).getHours() + ":" + new Date(session.date).getMinutes()}}</div>
                         </div>
                     </div>
+                </div>
+                <div v-else>
+                    <div>No class yet.</div>
                 </div>
             </v-row>
             

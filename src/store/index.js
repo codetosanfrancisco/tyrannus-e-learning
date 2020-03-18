@@ -17,6 +17,16 @@ const store = new Vuex.Store({
     },
     currentRoomActive: false
   },
+  actions: {
+    login_session({ commit }, data) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          commit('LOGIN_CURRENT_SESSION', data)
+          resolve()
+        }, 1000)
+      })
+    }
+  },
   mutations: {
     SET_LAYOUT (state, payload) {
       state.layout = payload

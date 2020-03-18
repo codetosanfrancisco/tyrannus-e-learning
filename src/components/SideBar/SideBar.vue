@@ -24,7 +24,7 @@
             <v-list-group
                 v-for="item in items"
                 :key="item.title"
-                v-show="isAdmin || item.view"
+                v-show="isAdmin || item.view || isLecturer"
                 v-model="item.active"
                 :prepend-icon="item.action"
                 no-action
@@ -39,6 +39,7 @@
                 <v-list-item
                 v-for="subItem in item.items"
                 :key="subItem.title"
+                v-show="isLecturer && subItem.lecturerCanView || isAdmin"
                 @click="navigateTo(subItem.route)"
                 >
                 <v-list-item-content>
@@ -64,7 +65,7 @@ import Cookies from "js-cookie"
 export default {
     mounted: function() {
       this.email = authStore.state.user.email
-      this.role = authStore.state.user.role[authStore.state.user.role.length - 1]
+      this.role = authStore.state.user.role.sort()[0]
     },
     name: "SideBar",
     data: function() {
@@ -75,11 +76,10 @@ export default {
           {
             action: 'dashboard',
             title: 'Dashboard',
-            active: true,
             view: true,
             items: [
-              { title: 'User Activity' },
-              { title: 'Statistics' },
+              // { title: 'User Activity',view: true},
+              // { title: 'Statistics', view: true },
             ]
           },
           {
@@ -87,19 +87,20 @@ export default {
             title: 'Users',
             view: false,
             items: [
-              { title: 'Admin' , route: 'Admin'},
-              { title: 'Lecturers', route: 'Lecturers' },
-              { title: 'Students', route: 'Students' },
+              { title: 'Admin' , route: 'Admin', view: false, lecturerCanView: false},
+              { title: 'Lecturers', route: 'Lecturers', view: false, lecturerCanView: true },
+              { title: 'Students', route: 'Students',view: false , lecturerCanView: true},
             ],
           },
           {
             action: 'date_range',
             title: 'Sessions',
+            active: true,
             view: true,
             items: [
-              { title: 'All Session', route: 'Sessions' },
-              { title: 'New Session', route: 'NewSession' },
-              { title: 'My Schedule', route: 'NewSession' }
+              { title: 'All Classes', route: 'Sessions', view: true , lecturerCanView: true},
+              { title: 'New Class', route: 'NewSession', view: false, lecturerCanView: true},
+              { title: 'My Schedule', route: 'Sessions', view: true, lecturerCanView: true }
             ],
           },
           {
@@ -107,7 +108,7 @@ export default {
             title: 'Account',
             view: true,
             items: [
-              { title: 'Setting', route: 'Sessions' },
+              { title: 'Setting', route: 'Sessions', view: true },
             ],
           },
         ],
@@ -131,6 +132,9 @@ export default {
     computed: {
       isAdmin() {
         return authStore.state.user.role.includes('admin');
+      },
+      isLecturer() {
+        return authStore.state.user.role.includes('lecturer');
       }
     }
 }

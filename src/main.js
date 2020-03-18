@@ -19,6 +19,7 @@ import VueLoaders from 'vue-loaders';
 import VueDocPreview from 'vue-doc-preview'
 import Cloudinary from 'cloudinary-vue';
 import OwlCarousel from 'v-owl-carousel'
+import fullscreen from 'vue-fullscreen'
  
 // CSS Import
 import 'v-calendar-scheduler/lib/main.css';
@@ -50,6 +51,7 @@ Vue.use(VueVideoPlayer)
 Vue.use(VueYoutube)
 Vue.use(VueLoaders);
 Vue.use(VueDocPreview);
+Vue.use(fullscreen);
 Vue.use(Cloudinary, {
   configuration: {
     cloudName: "dnsrf3okp"

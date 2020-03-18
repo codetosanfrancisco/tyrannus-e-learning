@@ -11,10 +11,6 @@
         <v-card>
           <v-card-title class="headline">Session is created!</v-card-title>
 
-          <v-card-text>
-            Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.
-          </v-card-text>
-
           <v-card-actions>
             <v-spacer></v-spacer>
 
@@ -91,6 +87,7 @@ import { TimePickerPlugin } from "@syncfusion/ej2-vue-calendars";
 import { getUsers } from "@/lib/mongodb/users/index";
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.css';
+import { authStore } from "@/lib/vuex/store/index"
 MultiSelect.Inject(CheckBoxSelection);
 Vue.use(MultiSelectPlugin);
 Vue.use(TextBoxPlugin);
@@ -180,7 +177,6 @@ export default {
                   this.dialog = true
                 }
                 catch(e) {
-                  alert(e);
                   this.isLoading = false;
                 }
             }
@@ -198,15 +194,23 @@ export default {
       };
       let { data: students } = await getUsers('student');
       let { data: lecturers } = await getUsers('lecturer');
+
+      if(authStore.state.user.role.includes('student') ||  authStore.state.user.role.includes('admin')) {
+        lecturers = lecturers.map(lecturer => {
+            return lecturer.email
+        })
+
+        if(authStore.state.user.role.includes('lecturer') && !authStore.state.user.role.includes('admin')) {
+           lecturers = [authStore.state.user.email];
+        } 
+      } else if(authStore.state.user.role.includes('lecturer')) {
+           lecturers = [authStore.state.user.email];
+      } 
       students = students.map(student => {
         return { Id: student.email, Game: student.email }
       });
-      lecturers = lecturers.map(lecturer => {
-        return lecturer.email
-      })
       this.studentDatas = students;
       this.originalStudentDatas = students;
-
       this.lecturerDatas = lecturers;
       window.console.log("STUDENTS", students)
     }

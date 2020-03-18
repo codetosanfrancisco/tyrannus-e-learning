@@ -20,10 +20,7 @@ const initializeSession = (self, token, sessionId, cb) => {
 
 
     var { role, email, addStudent, removeStudent } = self;
-    alert(role);
     var session = OT.initSession(apiKey, sessionId), publisher;
-
-    alert(token)
 
     if(!isLecturer(role)) {
         addStudent(role, email);
@@ -62,9 +59,8 @@ const initializeSession = (self, token, sessionId, cb) => {
 
         session.on('streamDestroyed', function(e) {
             var [roleStudent, emailStudent] = e.stream.name.split(" ");
-            if(isLecturer(roleStudent)) {
-                removeStudent(roleStudent, emailStudent);
-            }
+            window.console.log(roleStudent, emailStudent)
+            removeStudent(roleStudent, emailStudent);
         })
 
 

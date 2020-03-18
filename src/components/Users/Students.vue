@@ -62,27 +62,18 @@
           </template>
           <v-card>
             <v-card-title>
-              <span class="headline">{{ formTitle }}</span>
+              <span class="headline">New Student</span>
             </v-card-title>
 
             <v-card-text>
               <v-container>
                 <v-row>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.name" label="Dessert name"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.calories" label="Calories"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.fat" label="Fat (g)"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.carbs" label="Carbs (g)"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6" md="4">
-                    <v-text-field v-model="editedItem.protein" label="Protein (g)"></v-text-field>
-                  </v-col>
+                  <v-text-field v-model="email" label="Email">
+                  </v-text-field>
+                </v-row>
+                <v-row>
+                  <v-text-field v-model="password" label="Password" type="password">
+                  </v-text-field>
                 </v-row>
               </v-container>
             </v-card-text>
@@ -123,9 +114,12 @@
 <script>
 import { getUsers, removeUserRole  } from "@/lib/mongodb/users/index";
 import { authStore } from "@/lib/vuex/store/index"
+import { signUpUser } from "@/lib/mongodb/index"
 
   export default {
     data: () => ({
+      email: '',
+      password: '',
       dialog: false,
       drawer: false,
         items: [
@@ -155,29 +149,10 @@ import { authStore } from "@/lib/vuex/store/index"
         { text: 'Email', value: 'email' },
         { text: 'Actions', value: 'action', sortable: false },
       ],
-      desserts: [],
       students: [],
-      editedIndex: -1,
-      editedItem: {
-        name: '',
-        calories: 0,
-        fat: 0,
-        carbs: 0,
-        protein: 0,
-      },
-      defaultItem: {
-        name: '',
-        calories: 0,
-        fat: 0,
-        carbs: 0,
-        protein: 0,
-      },
     }),
 
     computed: {
-      formTitle () {
-        return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
-      },
     },
 
     watch: {
@@ -243,13 +218,24 @@ import { authStore } from "@/lib/vuex/store/index"
         }, 300)
       },
 
-      save () {
-        if (this.editedIndex > -1) {
-          Object.assign(this.desserts[this.editedIndex], this.editedItem)
-        } else {
-          this.desserts.push(this.editedItem)
-        }
-        this.close()
+      save: async function() {
+            try {
+                await signUpUser(this.email, this.password, 'Startup')
+                // authStore.commit('loggedIn')
+                // this.$router.push("/dashboard")
+                let { data: students } = await getUsers('student');
+                students = students.map((student, index) => {
+                  return{
+                    ...student, no: index + 1
+                  }   
+                })
+                window.console.log("STUDENTS", students)
+                this.students = students;
+                this.close();
+            }
+            catch(err) {
+                alert(err)
+            }
       },
     },
   }

@@ -1,6 +1,10 @@
 <template>
 <div class="live-test">
-    <v-dialog v-model="showEndSession" persistent max-width="290">
+    <loading :active.sync="isLoading" 
+            :can-cancel="true" 
+            :on-cancel="onCancel"
+            :is-full-page="fullPage"></loading>
+    <v-dialog v-model="showEndSession" max-width="290">
         <v-card>
             <v-card-title class="headline">Are you sure you want to end the session?</v-card-title>
             <v-card-actions>
@@ -10,83 +14,177 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <v-dialog v-model="showAddTab" persistent max-width="290">
+    <v-dialog v-model="showAddTab" max-width="290">
         <v-card>
             <div class="add-tabs-header">New</div>
              <div class="add-tabs">
                 <div class="add-tab" @click="addScreenShare">Screen Share</div>
                 <div class="add-tab" @click="addWhiteBoard">Whiteboard</div>
                 <div class="add-tab" @click="addEditor">Editor</div>
-                <div class="add-tab" @click="addYoutube">Youtube</div>
-                <div class="add-tab" @click="hideAddTabModal">Cancel</div>
             </div>
             <v-spacer></v-spacer>
         </v-card>
     </v-dialog>
-    <v-dialog v-model="library" max-width="990">
+    <v-dialog v-model="library" fullscreen hide-overlay transition="dialog-bottom-transition" max-width="990">
         <v-card>
-            <v-container>
-                <v-row>
-                    <v-col cols="10">
-                        <v-file-input multiple label="File input" accept=".pdf,.doc,.docx,.ppx,.ppt,.mp4,.jpg,.png" @change="onUploadPdf"></v-file-input>
-                    </v-col>
-                    <v-col cols="2">
-                        <v-btn @click="submitPdf" style="width: 100%; ">Submit</v-btn>
-                    </v-col>
-                </v-row>
-            </v-container>
-             <div>Media Library</div>
-            <div v-for="(file,index) in files" v-bind:key="file">
-                <v-img :src="file.thumbnail_url" max-width="300"/>
-                <v-btn tile @click="displayFile(index)">Open</v-btn>
-            </div>
+            <v-toolbar dark color="primary">
+                <v-btn icon dark @click="library = false">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
+                <v-toolbar-title>Media Library</v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-toolbar-items>
+                    <v-btn dark text @click="library = false">Save</v-btn>
+                </v-toolbar-items>
+            </v-toolbar>
+            <v-row>
+                <v-col cols="6" style="display: flex; align-items: center; ">
+                    <v-file-input label="File input" accept=".ppx,.ppt,.mp4" @change="onUploadPdf"></v-file-input>
+                </v-col>
+                <v-col cols="2" style="display: flex; align-items: center; ">
+                    <v-btn @click="submitPdf" >Submit</v-btn>
+                </v-col>
+            </v-row>
+            <v-row>
+                <v-col class="media-file" cols="4" v-for="(file,index) in files" v-bind:key="file" style="position: relative; margin: 20px; padding: 0; ">
+                    <v-img :src="file.thumbnail_url" style="width:100%; height: 300px; margin-bottom: 20px; ">
+                        <v-row
+                            class="fill-height ma-0"
+                            align="center"
+                            justify="center"
+                            >
+                            <v-progress-circular indeterminate color="white"></v-progress-circular>
+                        </v-row>
+                    </v-img>
+                    <div class="media-file-overlay" style="position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.5); ">
+                        <div style="width: 40%; background-color: white; padding: 10px; ">{{ file.display_name }}</div>
+                    </div>
+                    <v-btn tile block @click="displayFile(index)">Open</v-btn>
+                </v-col>
+            </v-row>
         </v-card>
     </v-dialog>
-    <div class="live-navbar">
-        <div v-if="isLecturer">
-            Lecturer Portal - Management - Prof Dr. Paul Cheng
-            <v-btn v-if="isLecturer" tile color="indigo" @click="library = !library">Upload</v-btn>
+    <div class="live-navbar" style="height: 80px; ">
+        <div v-if="isLecturer" style="height: 100%; ">
+            <v-row style="height: 100%; "> 
+                <v-col cols="10" style="display: flex; align-items: center; ">
+                    <div class="pl-3">Lecturer Portal - {{ sessionTitle }} - {{ email }}</div>
+                </v-col>
+                <v-col cols="2" style="display: flex; justify-content: flex-end; ">
+                    <div style="display: flex; ">
+                        <v-menu
+                        transition="slide-y-transition"
+                        offset-y
+                        >
+                        <template v-slot:activator="{ on }">
+                            <v-btn class="ma-2" tile small color="white" icon v-on="on">
+                                <v-icon>add_circle_outline</v-icon>
+                            </v-btn>
+                        </template>
+                        <v-list>
+                            <v-list-item
+                            @click="addScreenShare"
+                            >
+                            <v-list-item-title>Screen Share</v-list-item-title>
+                            </v-list-item>
+
+                            <v-list-item
+                            @click="addWhiteBoard"
+                            >
+                            <v-list-item-title>Whiteboard</v-list-item-title>
+                            </v-list-item>
+
+                            <v-list-item
+                            @click="library = !library"
+                            >
+                            <v-list-item-title>File/Video</v-list-item-title>
+                            </v-list-item>
+
+                            <v-list-item
+                            @click="addEditor"
+                            >
+                            <v-list-item-title>Text Editor</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                        </v-menu>
+
+                        <v-menu
+                        transition="slide-y-transition"
+                        offset-y
+                        >
+                        <template v-slot:activator="{ on }">
+                            <v-btn class="ma-2" tile small color="white" icon v-on="on">
+                                <v-icon>settings</v-icon>
+                            </v-btn>
+                        </template>
+                        <v-list>
+                            <v-list-item
+                            @click="goToAllClass"
+                            >
+                                <v-list-item-title>All Class</v-list-item-title>
+                            </v-list-item>
+
+                            <v-list-item
+                            v-on:click="this.showEndSessionModal"
+                            >
+                                <v-list-item-title>Exit Class</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                        </v-menu>
+                    </div>
+                </v-col>
+            </v-row>
         </div>
-        <div v-else>
-            Student Portal - Management - David Lin
+        <div v-else style="height: 80px; ">
+            <v-row>
+                <v-col cols="8" style="display: flex; align-items: center; ">
+                    <div class="pl-3">StudentPortal - {{ sessionTitle }} - {{ email }}</div>
+                </v-col>
+            </v-row>
         </div>
     </div>
-    <div class="live-con">
-        <div class="live-container">
-        <div v-bind:class="{workspace: true }">
-            <v-overlay
+    <div class="live-con" style="height: calc(100vh - 80px) ">
+        <div class="live-container" style="height: 100%; ">
+        <div v-bind:class="{workspace: true }" style="height: calc(100vh - 80px); display: flex; flex-direction: column; ">
+            <!-- <v-overlay
                 :absolute="true"
                 :value="isLecturer ? false : true"
                 color="transparent"
             >
-            </v-overlay>
+            </v-overlay> -->
             <div class="tabs">
                 <v-tabs
-                    background-color=#f1f2f6
+                    background-color="#212121"
                     v-model="active_tab"
+                    color="white"
                 >
                     <v-tab v-for="(item, index) in workSpaceTabs" :key="index" class="tab">
-                        {{ item.name }}
+                        <span style="color: white; ">{{ item.name }}</span>
+                        <v-icon small @click="closeTab(index)" color="white" class="ml-2">cancel</v-icon>    
                     </v-tab>
                 </v-tabs>
-                    <v-btn class="mx-2" fab dark x-small color="blue" @click="showAddTabModal">
-                        <v-icon dark>add</v-icon>
-                    </v-btn>
             </div>
             <div class="screens">
                 <div class="screen-container">
-                    <v-tabs-items v-model="active_tab">
+                    <v-tabs-items v-model="active_tab" style="height: 100%; ">
                         <v-tab-item
                             v-for="item in workSpaceTabs"
                             :key="item"
                             class="screen"
                         >
-                            <div v-if="item.name == 'SCREENSHARE'" style="height: 100%; " class="screen-share">
+                            <div v-if="item.name == 'SCREENSHARE'" style="height: 100%; background-color: #212121; " class="screen-share">
                                 <div class="screen-children" id="screen-preview" ></div>
-                                 <div class="share-my-screen" v-if="isLecturer">
-                                    <v-btn color="green darken-1" tile @click="initializeScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Share my screen</v-btn>
-                                    <v-btn color="red darken-1" tile @click="stopScreenSharing" v-if="sharingMyScreen" class="screen-sharing-control">End screen sharing</v-btn>
-                                    <v-btn color="green darken-1" tile @click="continueScreenSharing" v-if="!sharingMyScreen" class="screen-sharing-control">Continue screen sharing</v-btn>
+                                 <div class="share-my-screen">
+                                    <v-btn color="green darken-1" dark tile @click="initializeScreenSharing" v-if="!sharingMyScreen">Share my screen</v-btn>
+                                    <v-btn class="mx-2 screen-sharing-control" fab dark large color="purple" v-if="sharingMyScreen" @click="stopScreenSharing" >
+                                        <v-icon dark>stop_screen_share</v-icon>
+                                    </v-btn>
+                                    <v-btn class="mx-2 screen-sharing-control" fab dark large color="purple" v-if="sharingMyScreen && !fullScreen" @click="handleFullScreen" >
+                                        <v-icon dark>fullscreen</v-icon>
+                                    </v-btn>
+                                    <v-btn class="mx-2 screen-sharing-control" fab dark large color="purple" v-if="sharingMyScreen && fullScreen" @click="handleFullScreen" >
+                                        <v-icon dark>fullscreen_exit</v-icon>
+                                    </v-btn>
                                 </div>
                             </div>
                             <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'DRAWING'">
@@ -99,7 +197,7 @@
                                                     :options="editorOption">
                                     </quill-editor>
                             </div>
-                            <div class="video-tab" v-if="item.name == 'VIDEO'">
+                            <div class="video-tab" v-if="item.name == 'VIDEO'" style="background-color: #212121">
                                 <div class="video-upload">
                                     <v-container style="height: 100%; flex-grow: 1; ">
                                             <video-player   @play="onPlayerPlayVideo($event)"
@@ -108,31 +206,32 @@
                                     </v-container>
                                 </div>
                             </div>
-                            <div class="video-youtube" v-if="item.name == 'YOUTUBE'">
-                                <v-container style="height: 80px; ">
-                                    <v-row>
-                                        <v-col cols="10">
-                                            <v-text-field
-                                                label="Enter a youtube video url"
-                                                single-line
-                                                solo
-                                                v-model="youtubeId"
-                                            ></v-text-field>
-                                        </v-col>
-                                        <v-col cols="2">
-                                            <v-btn @click="searchVideo" large style="width: 100%; ">Get</v-btn>
-                                        </v-col>
-                                    </v-row>
-                                </v-container>
-                                <v-container style="height: 100%; flex-grow: 1; ">
-                                    <youtube :video-id="videoId" ref="youtube" @playing="playing" @ready="videoLoader = false; " width="100%" height="100%"></youtube>
-                                    <div v-if="videoLoader" class="video-loader">
-                                        <vue-loaders name="ball-rotate" color="indigo" scale="1"></vue-loaders>
+                            <div class="file-viewer-tab" v-if="item.name == 'FILEVIEWER'" style="background-color: #212121">
+                                <!-- <carousel :items="1" :dots="false"> -->
+                                <div style="height: 91%; padding: 50px; ">
+                                    <div v-for="(image,i) in item.images" v-bind:key="image"  v-show="i == currentPage" style="height: 100%; " >
+                                        <v-img :src="image" style="width: 65%; margin: auto; ">
+                                            <template v-slot:placeholder>
+                                                <v-row
+                                                class="fill-height ma-0"
+                                                align="center"
+                                                justify="center"
+                                                >
+                                                <v-progress-circular indeterminate color="white"></v-progress-circular>
+                                                </v-row>
+                                            </template>
+                                        </v-img>
                                     </div>
-                                </v-container>
-                            </div>
-                            <div class="file-viewer-tab" v-if="item.name == 'FILEVIEWER'">
-                                <v-img v-for="image in item.images" :src="image" max-width="300" v-bind:key="image"/>
+                                </div>
+                                <div style="display: flex; justify-content: center; align-items: center; " v-if="isLecturer">
+                                    <div class="mx-2">
+                                        <v-btn @click="prevSlide">Prev</v-btn>
+                                    </div>
+                                    <div class="mx-2">
+                                        <v-btn @click="nextSlide">Next</v-btn>
+                                    </div>
+                                </div>
+                                <!-- </carousel> -->
                             </div>
                         </v-tab-item>
                     </v-tabs-items>
@@ -158,10 +257,10 @@
             </div>
             <div class="videos-control-buttons">
                 <div class="video-control-buttons-other">
-                    <v-btn v-if="!see" v-on:click="publisher.publishVideo(false); see = true" dark class="control-button"><v-icon class="video-call">videocam</v-icon></v-btn>
-                    <v-btn v-if="see" v-on:click="publisher.publishVideo(true); see = false" dark class="control-button"><v-icon class="video-call">videocam_off</v-icon></v-btn>
-                    <v-btn v-if="!muted" dark class="control-button" v-on:click="this.muteButton"><v-icon class="voice-call">mic</v-icon></v-btn>
-                    <v-btn v-if="muted" dark class="control-button" v-on:click="this.unmuteButton"><v-icon class="voice-call">mic_off</v-icon></v-btn>
+                    <v-btn v-if="!see" v-on:click="publisher.publishVideo(false); see = true" class="control-button" color="black" dark ><v-icon class="video-call">videocam</v-icon></v-btn>
+                    <v-btn v-if="see" v-on:click="publisher.publishVideo(true); see = false" class="control-button" color="black" dark ><v-icon class="video-call">videocam_off</v-icon></v-btn>
+                    <v-btn v-if="!muted" class="control-button" color="black" dark  v-on:click="this.muteButton"><v-icon class="voice-call">mic</v-icon></v-btn>
+                    <v-btn v-if="muted" class="control-button" color="black" dark  v-on:click="this.unmuteButton"><v-icon class="voice-call">mic_off</v-icon></v-btn>
                     <!-- <v-btn dark class="control-button"><v-icon class="full-screen">fullscreen</v-icon></v-btn> -->
                 </div>
                 <div class="video-control-buttons-end">
@@ -180,7 +279,7 @@ import { initializeSession, checkScreenSharing, initializeScreenSharing } from "
 import { logoutSession } from "@/lib/mongodb/video-session/index";
 import { sendMessage } from '@/lib/mongodb/messages/index'
 import { sendEditorText } from "@/lib/mongodb/video-session/editor/index"
-import { sendNewTab, sendSwapTab } from "@/lib/mongodb/video-session/tab/index"
+import { sendNewTab, sendSwapTab, removeTab } from "@/lib/mongodb/video-session/tab/index"
 import io from 'socket.io-client';
 import { quillEditor } from 'vue-quill-editor'
 import $ from 'jquery';
@@ -189,6 +288,8 @@ import myEmitter from './resources/events';
 import { turnStudentOn, turnStudentOff } from "@/lib/mongodb/video-session/audio/index"
 import { sendVideoLink, sendVideoEvent } from "@/lib/mongodb/video-session/video/index"
 import { sendFileLink, submitPdf } from "@/lib/mongodb/video-session/file/index"
+import { sendYoutube, sendYoutubePlay, sendYoutubePause } from "@/lib/mongodb/youtube/index";
+import { nextSlide, prevSlide } from "@/lib/mongodb/powerpoint/index";
 
 const VIDEO = 'VIDEO';
 const FILEVIEWER = 'FILEVIEWER';
@@ -215,9 +316,7 @@ const tabOptions = new Map([
         SCREENSHARE,
         {
             name: SCREENSHARE,
-            tabLimit: {
-                num: 1
-            }
+            tabLimit: 1
         }
     ],
     [
@@ -240,13 +339,6 @@ const tabOptions = new Map([
             name: TEXTEDITOR,
             tabLimit: false
         }
-    ],
-    [
-        YOUTUBE,
-        {
-            name: YOUTUBE,
-            tabLimit: false
-        }
     ]
 ])
 
@@ -254,14 +346,15 @@ export default {
     name: "Live",
     components: {
         quillEditor,
-        DrawingBoard
+        DrawingBoard,
     },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
         try {
             const self = this;
             this.sessionId = this.$route.params.id;
-            const { data: { token, sessionData: { lecturers, students, sessionId } }} = await getSession(this.sessionId);
+            const { data: { token, sessionData: { lecturers, students, sessionId, title } }} = await getSession(this.sessionId);
+            this.sessionTitle = title;
             window.console.log(lecturers,students, sessionId, token)
             this.email = self.$store.getters.currentSession.email;
             this.role = self.$store.getters.currentSession.role;
@@ -315,6 +408,12 @@ export default {
                     if(data.name == 'Editor') {
                         this.editor.focus();
                     }
+                }
+            })
+
+            socket.on('remove-tab', function(data) {
+                if(self.email !== data.email) {
+                    self.workSpaceTabs = self.workSpaceTabs.filter((tab, index) => index != data.index)
                 }
             })
 
@@ -390,7 +489,24 @@ export default {
                     }
                 }
             })
-            
+
+            socket.on('powerpoint-next', function(data) {
+                if(data.email !== self.email) {
+                    window.console.log(data);
+                    if(self.currentPage < 20) {
+                        self.currentPage = self.currentPage + 1;
+                    }
+                }
+            })
+
+            socket.on('powerpoint-prev', function(data) {
+                if(data.email !== self.email) {
+                    window.console.log(data);
+                    if(self.currentPage > 0) {
+                        self.currentPage = self.currentPage - 1;
+                    }
+                }
+            })
             //this.messages = messageData.data.messages;
 
             $(document).on('click', '.quill-editor', function() {
@@ -409,11 +525,15 @@ export default {
     },
     data: function() {
         return {
+            fullScreen: false,
+            times: 0,
+            sessionTitle: "",
             numPages: 1,
-            currentPage: 1,
+            currentPage: 0,
             pageCount: 0,
+            isLoading: false,
+            fullPage: true,
             datas: [],
-            isDragging: false,
             publisher: null,
             muted: false,
             see: false,
@@ -475,50 +595,115 @@ export default {
         }
     },
     methods: {
-        onUploadPdf: function(files) {
-            this.pdfFile = files[0]
+        closeTab: async function(i) {
+            window.console.log(i)
+            await removeTab(this.sessionId, this.email, i);
+            this.workSpaceTabs = this.workSpaceTabs.filter((tab,index) => {
+                return index != i
+            })
+        },
+        launchFullscreen(element) {
+            if(element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if(element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+            } else if(element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if(element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+        },
+        exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            } else {
+                window.console.log('Fullscreen API is not supported.');
+            }
+        },
+        handleFullScreen () {
+            if(!this.fullScreen) {
+                const html = document.getElementsByClassName('screen-share')[0]
+                window.console.log(document.getElementsByClassName('screen-share'))
+                this.launchFullscreen(html);
+                this.fullScreen = true;
+            } else {
+                this.exitFullscreen()
+                this.fullScreen = false;
+            }
+        },
+        goToAllClass: function() {
+            let routeData = this.$router.resolve({name: 'Sessions' });
+            window.open(routeData.href, '_blank');
+        },
+        prevSlide: async function() {
+            if(this.currentPage > 0) {
+                await prevSlide(this.sessionId, this.email);
+                this.currentPage = this.currentPage - 1;
+            }
+        },
+        nextSlide: async function() {
+            if(this.currentPage < 20) {
+                await nextSlide(this.sessionId, this.email);
+                this.currentPage = this.currentPage + 1;
+            }
+        },
+        onUploadPdf: function(file) {
+            this.pdfFile = file
         },
         submitPdf: async function() {
             var self = this;
+            this.isLoading = true;
             const formData = new FormData();
+            window.console.log(this.pdfFile)
             formData.append('pdf', this.pdfFile);
             const fileExtension = this.pdfFile.name.split('.').pop();
             formData.append('extension', fileExtension);
             window.console.log(this.pdfFile)
             const data = await submitPdf(this.sessionId, formData);
             var array = [];
-                        if(data.data.file.pages > 0) {
-                            for(let i = 1; i <= data.data.file.pages; i++) {
-                                array.push(`https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill,pg_${i}/v${data.data.file.version}/${data.data.file.public_id}.jpg`)
-                            }
-                            self.files = [
-                                ...self.files,
-                                {
-                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
-                                    images: array,
-                                    resource_type: 'document'
-                                }
-                            ]
-                        } else if(data.data.file.resource_type == 'video') {
-                            self.files = [
-                                ...self.files,
-                                {
-                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/video/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
-                                    images: data.data.file.secure_url,
-                                    resource_type: 'video'
-                                }
-                            ]
-                        } 
-                        else {
-                            self.files = [
-                                ...self.files,
-                                {
-                                    thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
-                                    images: [data.data.file.secure_url],
-                                    resource_type: 'others'
-                                }
-                            ]
-                        }
+            window.console.log("NANI___", data.data);
+            if(data.data.file.pages > 0) {
+                for(let i = 1; i <= data.data.file.pages; i++) {
+                    array.push(`https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill,pg_${i}/v${data.data.file.version}/${data.data.file.public_id}.jpg`)
+                }
+                self.files = [
+                    ...self.files,
+                    {
+                        thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
+                        images: array,
+                        resource_type: 'document',
+                        display_name: data.data.file.original_filename
+                    }
+                ]
+            } else if(data.data.file.resource_type == 'video') {
+                self.files = [
+                    ...self.files,
+                    {
+                        thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/video/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
+                        images: data.data.file.secure_url,
+                        resource_type: 'video',
+                        display_name: data.data.file.original_filename
+                    }
+                ]
+            } 
+            else {
+                self.files = [
+                    ...self.files,
+                    {
+                        thumbnail_url: `https://res.cloudinary.com/dnsrf3okp/image/upload/c_fill/v${data.data.file.version}/${data.data.file.public_id}.jpg`,
+                        images: [data.data.file.secure_url],
+                        resource_type: 'others',
+                        display_name: data.data.file.original_filename
+                    }
+                ]
+            }
+            this.isLoading = false;
         },
         returnWantedTab: function(nameOfTab, option) {
             return {
@@ -543,7 +728,7 @@ export default {
         },
         addScreenShare: function() {
             if(!this.isLecturer) return
-            if(checkScreenSharing()) {
+            if(checkScreenSharing() && tabOptions.get(SCREENSHARE).tabLimit ) {
                 this.setNewTab(this.returnWantedTab(SCREENSHARE));
                 this.hideAddTabModal();
                 this.setActiveTab();
@@ -598,11 +783,22 @@ export default {
                 window.console.log(e)
             }
         },
+        seekTo(time) {
+            this.player.seekTo(time);
+        },
         playVideo() {
             this.player.playVideo()
         },
-        playing() {
-            window.console.log('we are watching!!!')
+        pauseVideo() {
+            this.player.pauseVideo()
+        },
+        playing: async function (e) {
+            await sendYoutubePlay(this.sessionId, this.email);
+            window.console.log('we are watching!!!', e)
+        },
+        paused: async function(e) {
+            await sendYoutubePause(this.sessionId, this.email);
+            window.console.log("the video is paused", e)
         },
         sendMessage: async function() {
             try {
@@ -642,10 +838,20 @@ export default {
             }
         },
         initializeScreenSharing: function() {
+            const self = this;
+            const cb = () => {
+                this.sharingMyScreen = true
+            }
             if(!this.isLecturer) return
             if(checkScreenSharing()) {
-                this.screenSharingPublisher = initializeScreenSharing(this.session)
-                this.sharingMyScreen = true
+                this.screenSharingPublisher = initializeScreenSharing(this.session, this.times, cb)
+                this.times = this.times + 1;
+                this.screenSharingPublisher.on('mediaStopped', function() {
+                    // The user clicked stop.
+                    $(".screen-share").find("#screen-preview").remove()
+                    window.console.log("Nanu")
+                    self.sharingMyScreen = false;
+                });
             } else {
                 alert("Screen Sharing is not supported in this browser.")
             }
@@ -654,8 +860,8 @@ export default {
         stopScreenSharing: function() {
             if(!this.isLecturer) return
             this.sharingMyScreen = false; 
-            //this.session.unpublish(this.screenSharingPublisher);
-            this.screenSharingPublisher.publishVideo(false);
+            this.session.unpublish(this.screenSharingPublisher);
+            //this.screenSharingPublisher = this.screenSharingPublisher.publishVideo(false);
         },
         continueScreenSharing: function() {
             if(!this.isLecturer) return
@@ -705,6 +911,7 @@ export default {
         },
         removeStudent: function(role) {
             this.studentsRole = this.studentsRole.filter(student => student.role !== role);
+            window.console.log(role, this.studentsRole)
         },
         turnStudentOn: function(role) {
             let studentNum = this.studentsRole.findIndex(student => student.role == role)
@@ -729,6 +936,7 @@ export default {
             if(this.youtubeId.trim().length > 0) {
                 const id = this.$youtube.getIdFromUrl(this.youtubeId.trim())
                 this.videoId = id;
+                sendYoutube(this.sessionId, id, this.email);
             }
         }
     },
@@ -744,8 +952,8 @@ export default {
             window.console.log("THIS.ROLE",this.$store.getters.currentSession.role)
             return isLecturerMou(this.$store.getters.currentSession.role)
         },
-        player() {
-            return this.$refs.youtube.player
+        currentNumberOfSameTab: function(nameOfTab) {
+            return this.workSpaceTabs.filter(tab => tab.name == nameOfTab).length
         }
     },
     watch: {

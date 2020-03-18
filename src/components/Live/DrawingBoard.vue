@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div style="height: 100%;">
         <div class="whiteboard-toolbar">
         <v-menu
         v-model="value"
@@ -75,7 +75,9 @@
         </div>
         <!-- <canvas :id="id"></canvas>
         <div class="cursor" id="cursor"></div> -->
-        <div :id="id"></div>
+        <div :id="id" style="height: calc(100% - 40px);
+    display: flex;
+    align-items: center;"></div>
     </div>
 </template>
 
@@ -126,8 +128,8 @@ class Draw {
         this.color = '#a713f7';
         this.width = 6;
         this.email = email;
-        var width = window.innerWidth;
-        var height = window.innerHeight - 25;
+        var width = 1000;
+        var height = 600;
 
       // first we need Konva core things: stage and layer
         this.stage = new Konva.Stage({

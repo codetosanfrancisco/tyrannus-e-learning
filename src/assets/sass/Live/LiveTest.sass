@@ -19,8 +19,6 @@
 
 .file-viewer-tab
    height: 100%
-   display: flex
-   flex-direction: column
 
    .root
       height: 100% !important
@@ -95,15 +93,22 @@
 
 .video-js
    width: 100% !important
-   height: 80% !important
+   height: 100% !important
 
 .video-player-box
-   height: 100%
+   height: 100% 
    width: 100%
+
+
+.konvajs-content
+   margin: auto !important
+   border: 5px solid white !important
+
+.video-js .vjs-fullscreen-control
+   display: none
    
 
 .live-navbar
-   height: 50px
    background-color: $background-darkgrey
    color: $background-white
 
@@ -205,28 +210,40 @@
    margin: 20px
 
 .screen
-   height: 95vh
+   height: 100%
 
-.screen-share:hover > .share-my-screen 
-   display: flex !important
+.media-file > .media-file-overlay
+   display: none
+
+.media-file:hover > .media-file-overlay
+   display: flex
    justify-content: center
    align-items: center
 
+.share-my-screen > .screen-sharing-control
+   display: none
+
+.share-my-screen:hover > .screen-sharing-control
+   display: block
+
 .share-my-screen 
    background-color: transparent
-   height: 100px
+   height: 100%
+   padding: 10px
    position: absolute
    bottom: 0
    left: 0
    right: 0
    grid-column: 1 / 2
-   display: none
+   //display: none
+   display: flex !important
+   justify-content: center
+   align-items: center
 
    
 .screen-container
    height: 100%
    flex-grow: 1
-   padding: 0 5px 0px 5px
 
 .workspace
    display: flex
@@ -240,7 +257,7 @@
    flex-grow: 1
 
 .screen-children
-   background-color: $background-white
+   background-color: $background-darkgrey
    width: 100%
    display: flex
    height: 100%
@@ -331,7 +348,7 @@
    display: flex
    align-items: center
    z-index: 10
-   background-color: black
+   background-color: $background-darkgrey
    padding: 5px
 
 

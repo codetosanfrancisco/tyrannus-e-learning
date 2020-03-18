@@ -118,7 +118,6 @@
 
 <script>
 import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/index";
-// import { authStore } from "@/lib/vuex/store/index"
 
   export default {
     data: () => ({

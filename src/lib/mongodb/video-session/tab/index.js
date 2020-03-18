@@ -1,4 +1,5 @@
 import sendNewTab from "./sendNewTab";
 import sendSwapTab from "./sendSwapTab";
+import removeTab from "./removeTab";
 
-export { sendNewTab, sendSwapTab }
+export { sendNewTab, sendSwapTab, removeTab }
