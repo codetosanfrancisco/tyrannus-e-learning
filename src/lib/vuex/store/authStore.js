@@ -3,7 +3,12 @@ import Vuex from 'vuex'
 const authStore = new Vuex.Store({
     state: {
       loggedIn: false,
-      user: null
+      user: null,
+      session: {
+        email: null,
+        role: null,
+        sessionId: null
+      }
     },
     mutations: {
       loggedIn(state, user) {
@@ -13,7 +18,10 @@ const authStore = new Vuex.Store({
       logOut(state) {
         state.loggedIn = false
         state.user = {}
-    }
+      },
+      logInSession(state, obj){
+        state.session = obj;
+      }
     }
   })
 

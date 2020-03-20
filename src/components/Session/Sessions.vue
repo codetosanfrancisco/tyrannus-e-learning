@@ -45,95 +45,6 @@
                 </div>
             </v-row>
             
-            <!-- <v-row no-gutters style="flex-grow: 1; ">
-                <v-col
-                    :key="1"
-                    :cols="11"
-                >
-                   <div style="font-size: 1.5em; font-weight: 200; ">>Upcoming session </div>
-                </v-col>
-                <div style="display: flex; padding: 20px 0; flex-wrap: wrap; ">
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-            </div>
-            </v-row> -->
-            
-
-            <!-- <v-row no-gutters style="flex-grow: 1; ">
-                <v-col
-                    :key="1"
-                    :cols="11"
-                >
-                   <div style="font-size: 1.5em; font-weight: 200; ">>Previous session </div>
-                </v-col>
-                <div style="display: flex; padding: 20px 0; flex-wrap: wrap; ">
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div>
-                </div>
-                <div class="e-card">
-                    <div class="e-card-image">
-                        <div class="e-card-title">Introduction to Theology </div>
-                    </div>
-                    <div class="e-card-content"> 
-                        <div>8 March 2020, 2pm</div>
-                    </div
-                    >
-                    
-                </div>
-            </div>
-            </v-row> -->
-            
         </div>
     </div>
 </template>
@@ -180,7 +91,29 @@ export default {
     methods: {
         navigateTo(i) {
             const data = this.sessions[i]
-            this.$router.push({ name: 'Waiting', params: {id: data._id }})
+            window.console.log(data);
+            var res;
+            if(data.lecturers[0].email == authStore.state.user.email) {
+                window.console.log("RES",data.lecturers[0]);
+                const obj = {
+                    sessionId: this.sessions[i]._id,
+                    email: authStore.state.user.email,
+                    role: data.lecturers[0].role
+                }
+                window.console.log("OBJ", obj)
+                authStore.commit('logInSession', obj);
+            } else {
+                res = data.students.filter(student => student.email == authStore.state.user.email)[0];
+                window.console.log("RES",res)
+                const obj = {
+                    sessionId: this.sessions[i]._id,
+                    email: authStore.state.user.email,
+                    role: res.role
+                }
+                window.console.log("OBJ", obj)
+                authStore.commit('logInSession', obj);
+            }
+            this.$router.push({ name: 'Live', params: {id: data._id }})
         },
         handleScroll(e) {
             window.console.log(this.scrolled, window.scrollY, e)

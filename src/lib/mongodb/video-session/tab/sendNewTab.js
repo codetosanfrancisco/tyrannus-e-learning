@@ -1,8 +1,8 @@
 import axiosInstance from "../../../axios/axiosInstance";
 
-const sendNewTab = (name,sessionId, email) => {
+const sendNewTab = (object,sessionId, email) => {
     return axiosInstance.post(`/tab/${sessionId}/new`, {
-        name,
+        ...object,
         email
     })
 }

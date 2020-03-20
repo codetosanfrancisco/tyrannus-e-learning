@@ -16,7 +16,7 @@ const isLecturer = (role) => {
     return role.split("-")[0] == 'lecturer'
 }
   
-const initializeSession = (self, token, sessionId, cb) => {
+const initializeSession = (self, token, sessionId, cb, showFullScreen) => {
 
 
     var { role, email, addStudent, removeStudent } = self;
@@ -53,6 +53,11 @@ const initializeSession = (self, token, sessionId, cb) => {
                 addStudent(roleStudent, emailStudent);
             }
             Vue.nextTick(function() {
+
+                if(event.stream.videoType === 'screen') {
+                    showFullScreen()
+                }
+
                 session.subscribe(event.stream, roleStudent, subscriberOptions, handleError);
             })
         });

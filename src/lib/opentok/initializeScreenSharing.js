@@ -11,9 +11,9 @@ const initializeScreenSharing = (session, status = 0, cb) => {
         if (error) {
           // Look at error.message to see what went wrong.
         } else {
-          session.publish(publisher, function(result) {
-            if(result) {
-              alert(result);
+          session.publish(publisher, function(error) {
+            if(!error) {
+              window.console.log("RESULT",error);
               cb();
             }
           });

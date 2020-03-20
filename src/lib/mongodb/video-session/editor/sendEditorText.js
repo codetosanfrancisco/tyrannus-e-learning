@@ -1,9 +1,9 @@
 import axiosInstance from "../../../axios/axiosInstance";
 
-const sendEditorText = (data, boardNumber = 1, sessionId, email) => {
+const sendEditorText = (data, index, sessionId, email) => {
     return axiosInstance.post(`/editorText/${sessionId}/sendEditorText`, {
         data,
-        boardNumber, 
+        index, 
         email
     })
 }

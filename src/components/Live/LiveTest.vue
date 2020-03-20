@@ -1,9 +1,18 @@
 <template>
 <div class="live-test">
-    <loading :active.sync="isLoading" 
-            :can-cancel="true" 
-            :on-cancel="onCancel"
-            :is-full-page="fullPage"></loading>
+    <v-snackbar
+      v-model="screenShareSnackbar"
+      :top="true"
+      :multi-line="true"
+    >
+     You can only have 1 screenshare tab.
+      <v-btn
+        text
+        @click="screenShareSnackbar = false"
+      >
+        Close
+      </v-btn>
+    </v-snackbar>
     <v-dialog v-model="showEndSession" max-width="290">
         <v-card>
             <v-card-title class="headline">Are you sure you want to end the session?</v-card-title>
@@ -12,17 +21,6 @@
             <v-btn color="green darken-1" text @click="this.endSession">Yes</v-btn>
             <v-btn color="green darken-1" text @click="this.hideEndSessionModal">Cancel</v-btn>
             </v-card-actions>
-        </v-card>
-    </v-dialog>
-    <v-dialog v-model="showAddTab" max-width="290">
-        <v-card>
-            <div class="add-tabs-header">New</div>
-             <div class="add-tabs">
-                <div class="add-tab" @click="addScreenShare">Screen Share</div>
-                <div class="add-tab" @click="addWhiteBoard">Whiteboard</div>
-                <div class="add-tab" @click="addEditor">Editor</div>
-            </div>
-            <v-spacer></v-spacer>
         </v-card>
     </v-dialog>
     <v-dialog v-model="library" fullscreen hide-overlay transition="dialog-bottom-transition" max-width="990">
@@ -152,31 +150,30 @@
                 color="transparent"
             >
             </v-overlay> -->
-            <div class="tabs">
-                <v-tabs
-                    background-color="#212121"
-                    v-model="active_tab"
-                    color="white"
+            <div class="tabs" style="background-color: #212121; z-index: 100; ">
+                <div
+                    style="display: flex; background-color: #212121; "
                 >
-                    <v-tab v-for="(item, index) in workSpaceTabs" :key="index" class="tab">
-                        <span style="color: white; ">{{ item.name }}</span>
-                        <v-icon small @click="closeTab(index)" color="white" class="ml-2">cancel</v-icon>    
-                    </v-tab>
-                </v-tabs>
+                    <div v-for="(item, index) in workSpaceTabs" :key="index" class="tab" @click="changeTab(index)" style="display: flex; align-items: center; border-bottom: 3px solid white; ">
+                        <v-icon  @click="closeTab(index)" color="white">cancel</v-icon>    
+                        <span style="color: white; " class="mr-2">{{ item.name }}</span>
+                    </div>
+                </div>
             </div>
             <div class="screens">
                 <div class="screen-container">
-                    <v-tabs-items v-model="active_tab" style="height: 100%; ">
-                        <v-tab-item
-                            v-for="item in workSpaceTabs"
+                    <div style="height: 100%; background-color: #212121; ">
+                        <div
+                            v-for="(item,index) in workSpaceTabs"
                             :key="item"
                             class="screen"
+                            v-show="active_tab == index"
                         >
-                            <div v-if="item.name == 'SCREENSHARE'" style="height: 100%; background-color: #212121; " class="screen-share">
+                            <div v-if="item.name == 'SCREENSHARE'"  style="height: 100%; background-color: #212121; " class="screen-share">
                                 <div class="screen-children" id="screen-preview" ></div>
                                  <div class="share-my-screen">
-                                    <v-btn color="green darken-1" dark tile @click="initializeScreenSharing" v-if="!sharingMyScreen">Share my screen</v-btn>
-                                    <v-btn class="mx-2 screen-sharing-control" fab dark large color="purple" v-if="sharingMyScreen" @click="stopScreenSharing" >
+                                    <v-btn color="green darken-1" dark tile @click="initializeScreenSharing" v-if="!sharingMyScreen && isLecturer">Share my screen</v-btn>
+                                    <v-btn class="mx-2 screen-sharing-control" fab dark large color="purple" v-if="sharingMyScreen && isLecturer" @click="stopScreenSharing" >
                                         <v-icon dark>stop_screen_share</v-icon>
                                     </v-btn>
                                     <v-btn class="mx-2 screen-sharing-control" fab dark large color="purple" v-if="sharingMyScreen && !fullScreen" @click="handleFullScreen" >
@@ -187,17 +184,17 @@
                                     </v-btn>
                                 </div>
                             </div>
-                            <div class="screen-children whiteboard" id="screen-preview" v-if="item.name == 'DRAWING'">
+                            <div class="screen-children whiteboard" v-if="item.name == 'DRAWING'" >
                                 <div class="signature-pad">
-                                    <drawing-board id="hello" :datas="datas" :role="role" :sessionId="getSessionId" :email="email"></drawing-board>
+                                    <drawing-board :id="`hello-${index}`" :role="role" :sessionId="getSessionId" :email="email" :index="index" :bigData="item.bigData"></drawing-board>
                                 </div>
                             </div>
-                            <div class="screen-children testing" id="screen-preview" v-if="item.name == 'TEXTEDITOR'">
-                                    <quill-editor v-model="content" ref="myQuillEditor"
+                            <div class="screen-children" id="screen-editor" v-if="item.name == 'TEXTEDITOR'"  :data-editor="index">
+                                    <quill-editor v-model="item.textData" ref="myQuillEditor"
                                                     :options="editorOption">
                                     </quill-editor>
                             </div>
-                            <div class="video-tab" v-if="item.name == 'VIDEO'" style="background-color: #212121">
+                            <div class="video-tab" v-if="item.name == 'VIDEO'" style="background-color: #212121" >
                                 <div class="video-upload">
                                     <v-container style="height: 100%; flex-grow: 1; ">
                                             <video-player   @play="onPlayerPlayVideo($event)"
@@ -206,7 +203,7 @@
                                     </v-container>
                                 </div>
                             </div>
-                            <div class="file-viewer-tab" v-if="item.name == 'FILEVIEWER'" style="background-color: #212121">
+                            <div class="file-viewer-tab" v-if="item.name == 'FILEVIEWER'" style="background-color: #212121" >
                                 <!-- <carousel :items="1" :dots="false"> -->
                                 <div style="height: 91%; padding: 50px; ">
                                     <div v-for="(image,i) in item.images" v-bind:key="image"  v-show="i == currentPage" style="height: 100%; " >
@@ -233,8 +230,8 @@
                                 </div>
                                 <!-- </carousel> -->
                             </div>
-                        </v-tab-item>
-                    </v-tabs-items>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -276,10 +273,8 @@
 <script>
 import { getSession } from "@/lib/Live/index";
 import { initializeSession, checkScreenSharing, initializeScreenSharing } from "@/lib/opentok/index"
-import { logoutSession } from "@/lib/mongodb/video-session/index";
-import { sendMessage } from '@/lib/mongodb/messages/index'
 import { sendEditorText } from "@/lib/mongodb/video-session/editor/index"
-import { sendNewTab, sendSwapTab, removeTab } from "@/lib/mongodb/video-session/tab/index"
+import { sendNewTab, sendSwapTab, removeTab, getAllTabs } from "@/lib/mongodb/video-session/tab/index"
 import io from 'socket.io-client';
 import { quillEditor } from 'vue-quill-editor'
 import $ from 'jquery';
@@ -288,8 +283,9 @@ import myEmitter from './resources/events';
 import { turnStudentOn, turnStudentOff } from "@/lib/mongodb/video-session/audio/index"
 import { sendVideoLink, sendVideoEvent } from "@/lib/mongodb/video-session/video/index"
 import { sendFileLink, submitPdf } from "@/lib/mongodb/video-session/file/index"
-import { sendYoutube, sendYoutubePlay, sendYoutubePause } from "@/lib/mongodb/youtube/index";
 import { nextSlide, prevSlide } from "@/lib/mongodb/powerpoint/index";
+import { sendFullScreen } from "@/lib/mongodb/video-session/screenshare/index"
+import { authStore } from "@/lib/vuex/store/index"
 
 const VIDEO = 'VIDEO';
 const FILEVIEWER = 'FILEVIEWER';
@@ -298,9 +294,6 @@ const DRAWING = 'DRAWING';
 const TEXTEDITOR = 'TEXTEDITOR';
 const YOUTUBE = 'YOUTUBE';
 
-const isLecturerMou = (role) => {
-    return role.split("-")[0] == 'lecturer'
-}
 
 
 const tabOptions = new Map([
@@ -309,28 +302,29 @@ const tabOptions = new Map([
         {
             name: VIDEO,
             option: null,
-            tabLimit: false
+            tabLimit: false,
+            videoLink: ""
         }
     ],
     [
         SCREENSHARE,
         {
             name: SCREENSHARE,
-            tabLimit: 1
+            tabLimit: 1,
         }
     ],
     [
         DRAWING,
         {
             name: DRAWING,
-            tabLimit: false
+            tabLimit: false,
         }
     ],
     [
         FILEVIEWER,
         {
             name: FILEVIEWER,
-            tabLimit: false
+            tabLimit: false,
         }
     ],
     [
@@ -348,29 +342,42 @@ export default {
         quillEditor,
         DrawingBoard,
     },
+    beforeDestroy: function() {
+        this.session.disconnect()
+    },
     mounted : async function(){
         // Use the id of the session record to retrieve the real session id, and generate token
         try {
             const self = this;
             this.sessionId = this.$route.params.id;
-            const { data: { token, sessionData: { lecturers, students, sessionId, title } }} = await getSession(this.sessionId);
+            const { data: { token, sessionData: { lecturers, sessionId, title } }} = await getSession(this.sessionId);
             this.sessionTitle = title;
-            window.console.log(lecturers,students, sessionId, token)
-            this.email = self.$store.getters.currentSession.email;
-            this.role = self.$store.getters.currentSession.role;
-            window.console.log(this.role, this.role.split('-'))
-            this.studentsRole = students.filter(student => student.active == true && student.email != this.email).map(student => { return {role: student.role, email: student.email, mute: true} })
+            this.email = authStore.state.session.email;
+            this.role = authStore.state.session.role;
+            window.console.log("this.role, this.email",this.role, this.email)
             this.zerolecturer = lecturers.filter(lecturer => lecturer.role == "lecturer-0")[0];
-            window.console.log(this.studentsRole, this.zerolecturer)
-            //const messageData = await getMessages('Startup', this.sessionId);
-            const socket = io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
+            const socket = await io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
             
+            window.console.log("SOCKET", socket);
+        
 
             // Once connect, emit sessionId to join the matching room
             socket.on('connect', function() {
+                window.console.log(" ====== SOCKET ON CONNECT ====")
                 socket.emit('room', self.sessionId);
             });
 
+             // Get All Existing tabs
+            const { data: { session }} = await getAllTabs(this.sessionId);
+
+            this.workSpaceTabs = session.tabs;
+
+            this.changeTab(session.currentTab);
+            window.console.log("====EXISTING TABS====", session.tabs);
+
+             
+
+            // Initialize Video Camera
             initializeSession(self, token, sessionId, function(publisher, session) {
                 self.publisher = publisher;
                 self.session = session;
@@ -379,35 +386,32 @@ export default {
                     self.publisher.publishAudio(false);
                     self.muted = true;
                 }
+            }, function showFullScreen() {
+                self.sharingMyScreen = true;
             });
             
-    
-            // socket.on('message', function(data) {
-            //     self.messages = data;
-            // });
             socket.on('drawing', function(data) {
                 window.console.log("Drawing",data)
                 myEmitter.emit('event', data)
             });
             socket.on('editortext', function(data) {
-                window.console.log(data);
+                 window.console.log("Data outside if statement", data);
                 if(self.email !== data.email) {
-                    self.content = data.data
+                    window.console.log("Data inside if statement", data);
+                    let objs = self.workSpaceTabs;
+                    let obj = self.workSpaceTabs[data.index];
+                    obj.textData = data.data;
+                    objs[data.index] = obj;
+                    self.workSpaceTabs = objs;
                 }
             });
             socket.on('new-tab', function(data) {
                 if(self.email !== data.email) {
                     self.workSpaceTabs = [
                         ...self.workSpaceTabs,
-                        {
-                            name: data.name,
-                        }
+                        data
                     ]
                     self.active_tab = self.workSpaceTabs.length - 1
-
-                    if(data.name == 'Editor') {
-                        this.editor.focus();
-                    }
                 }
             })
 
@@ -456,7 +460,7 @@ export default {
                         }
                     }];
                     let length = self.playerOptions.length;
-                    self.setNewTab(self.returnWantedTab(VIDEO), {
+                    self.setNewTab(self.getTab(VIDEO), {
                         option: self.playerOptions[length - 1],
                     })
                 }
@@ -475,6 +479,13 @@ export default {
                     window.console.log(data)
                     self.addFile(length - 1);
                     
+                }
+            })
+
+            socket.on('fullscreen', function(data) {
+                window.console.log(data)
+                if(data.email !== self.email) {
+                    self.sharingMyScreen = data.fullscreen
                 }
             })
 
@@ -509,14 +520,16 @@ export default {
             })
             //this.messages = messageData.data.messages;
 
-            $(document).on('click', '.quill-editor', function() {
+            $(document).on('click', '.quill-editor', function(e) {
                 if(!self.isLecturer) return
-                sendEditorText(self.content, 1, self.sessionId, self.email)
+                const index = parseInt($(e.target).closest("#screen-editor").data("editor"))
+                sendEditorText(self.workSpaceTabs[index].textData, index, self.sessionId, self.email)
             })
 
-             $(document).on('keyup', '.quill-editor', function() {
+             $(document).on('keyup', '.quill-editor', function(e) {
                  if(!self.isLecturer) return
-                sendEditorText(self.content, 1, self.sessionId, self.email)
+                 const index = parseInt($(e.target).closest("#screen-editor").data("editor"))
+                sendEditorText(self.workSpaceTabs[index].textData, index, self.sessionId, self.email)
             })
         }
         catch(e) {
@@ -525,15 +538,14 @@ export default {
     },
     data: function() {
         return {
+            tabsData: [],
+            screenShareSnackbar: false,
             fullScreen: false,
             times: 0,
             sessionTitle: "",
             numPages: 1,
             currentPage: 0,
-            pageCount: 0,
-            isLoading: false,
             fullPage: true,
-            datas: [],
             publisher: null,
             muted: false,
             see: false,
@@ -545,23 +557,11 @@ export default {
             studentsRole: [],
             zerolecturer: null,
             showEndSession: false,
-            showAddTab: false,
             library: false,
             active_tab: null,
-            fileTab: null,
-            boardNumber: 1,
-            videoId: 'lG0Ys-2d4MA',
-            workSpaceTabs: [{
-                name: SCREENSHARE,
-            }
-            ],
-            file: "",
+            workSpaceTabs: [],
             files: [],
-            youtubeId: "",
-            youtubeVideo: false,
             sharingMyScreen: false,
-            tab: null,
-            fileUrl: '',
             //Menu
             data: null,
             content: null,
@@ -590,13 +590,19 @@ export default {
                 }
             },
             playerOptions: [],
-            videoLoader: true,
             pdfFile: null
         }
     },
     methods: {
+        changeTab(index) {
+            this.active_tab = index;
+            this.handleTabChange(index);
+        },
         closeTab: async function(i) {
             window.console.log(i)
+            if(this.workSpaceTabs[i].name == SCREENSHARE) {
+                await this.stopScreenSharing();
+            }
             await removeTab(this.sessionId, this.email, i);
             this.workSpaceTabs = this.workSpaceTabs.filter((tab,index) => {
                 return index != i
@@ -705,7 +711,7 @@ export default {
             }
             this.isLoading = false;
         },
-        returnWantedTab: function(nameOfTab, option) {
+        getTab: function(nameOfTab, option) {
             return {
                 ...tabOptions.get(nameOfTab),
                 ...option
@@ -721,32 +727,41 @@ export default {
         },
         addYoutube: async function() {
             if(!this.isLecturer) return
-            this.setNewTab(this.returnWantedTab(YOUTUBE));
+            this.setNewTab(this.getTab(YOUTUBE));
             this.sendNewTab(YOUTUBE)
             this.setActiveTab();
-            this.hideAddTabModal();
         },
         addScreenShare: function() {
             if(!this.isLecturer) return
-            if(checkScreenSharing() && tabOptions.get(SCREENSHARE).tabLimit ) {
-                this.setNewTab(this.returnWantedTab(SCREENSHARE));
-                this.hideAddTabModal();
-                this.setActiveTab();
-                this.sendNewTab(SCREENSHARE);
+            const numberOfScreenShare = this.workSpaceTabs.filter(tab => tab.name == SCREENSHARE).length
+            if(checkScreenSharing()) {
+                if(tabOptions.get(SCREENSHARE).tabLimit > numberOfScreenShare) {
+                    const object = this.getTab(SCREENSHARE, {
+                        sharingMyScreen: false
+                    })
+                    this.setNewTab(object);
+                    this.setActiveTab();
+                    this.sendNewTab(object);
+                } else {
+                    this.screenShareSnackbar = true;
+                }
+                
             } else {
                 alert("Screen sharing is not supported in this browser.")
             }
         },
         addEditor: function() {
             if(!this.isLecturer) return
-            this.setNewTab(this.returnWantedTab(TEXTEDITOR));
-            this.hideAddTabModal();
-            this.sendNewTab(TEXTEDITOR);
+            const tab = this.getTab(TEXTEDITOR, {
+                textData: ''
+            })
+            this.setNewTab(tab);
+            this.sendNewTab(tab);
             this.setActiveTab();
         },
         addVideo: function(i) {
             window.console.log(this.files[i].images)
-            this.setNewTab(this.returnWantedTab(VIDEO,{ option: {
+            this.setNewTab(this.getTab(VIDEO,{ option: {
                 // videojs options
                 language: 'en',
                 playbackRates: [0.7, 1.0, 1.5, 2.0],
@@ -763,10 +778,12 @@ export default {
         },
         addWhiteBoard: function() {
             if(!this.isLecturer) return
-            this.setNewTab(this.returnWantedTab(DRAWING));
-            this.hideAddTabModal();
+            const tab = this.getTab(DRAWING, {
+                bigData: ''
+            })
+            this.setNewTab(tab);
             this.setActiveTab();
-            this.sendNewTab(DRAWING)
+            this.sendNewTab(tab)
         },
         onPlayerPlayVideo: async function() {
             sendVideoEvent(this.sessionId, this.email, 'play')
@@ -783,61 +800,17 @@ export default {
                 window.console.log(e)
             }
         },
-        seekTo(time) {
-            this.player.seekTo(time);
-        },
-        playVideo() {
-            this.player.playVideo()
-        },
-        pauseVideo() {
-            this.player.pauseVideo()
-        },
-        playing: async function (e) {
-            await sendYoutubePlay(this.sessionId, this.email);
-            window.console.log('we are watching!!!', e)
-        },
-        paused: async function(e) {
-            await sendYoutubePause(this.sessionId, this.email);
-            window.console.log("the video is paused", e)
-        },
-        sendMessage: async function() {
-            try {
-                const message = this.message;
-                this.message = '';
-                await sendMessage('voon@gmail.com', message, 'Startup', this.sessionId);
-            }
-            catch(e) {
-                alert(e);
-            }
-        },
         showEndSessionModal () {
             this.showEndSession = true;
         },
         hideEndSessionModal () {
             this.showEndSession = false;
         },
-        showAddTabModal () {
-            if(!this.isLecturer) return
-            this.showAddTab = true;
-        },
-        hideAddTabModal () {
-            if(!this.isLecturer) return
-            this.showAddTab = false;
-        },
         endSession: async function() {
-            const email = this.$store.getters.currentSession.email;
-            if(email) {
-                try {
-                    await logoutSession(this.sessionId, 'Startup', email);
-                    this.session.unpublish(this.publisher);
-                    window.location.reload();
-                }
-                catch(e) {
-                    window.console.log(e);
-                }
-            }
+            let routeData = this.$router.resolve({name: 'Sessions' });
+            window.location.href  = routeData.href
         },
-        initializeScreenSharing: function() {
+        initializeScreenSharing: async function() {
             const self = this;
             const cb = () => {
                 this.sharingMyScreen = true
@@ -846,26 +819,28 @@ export default {
             if(checkScreenSharing()) {
                 this.screenSharingPublisher = initializeScreenSharing(this.session, this.times, cb)
                 this.times = this.times + 1;
-                this.screenSharingPublisher.on('mediaStopped', function() {
+                this.screenSharingPublisher.on('mediaStopped', async function() {
                     // The user clicked stop.
                     $(".screen-share").find("#screen-preview").remove()
                     window.console.log("Nanu")
+                    await sendFullScreen(self.sessionId, false, self.email);
                     self.sharingMyScreen = false;
                 });
+
+                this.screenSharingPublisher.on('subscribe', function() {
+                    alert("Nani")
+                })
             } else {
                 alert("Screen Sharing is not supported in this browser.")
             }
         },
         // Try stop screen sharing: Unpublish it, continue screen sharing: initialize again
-        stopScreenSharing: function() {
+        stopScreenSharing: async function() {
             if(!this.isLecturer) return
-            this.sharingMyScreen = false; 
             this.session.unpublish(this.screenSharingPublisher);
+            await sendFullScreen(this.sessionId, false, this.email);
+            this.sharingMyScreen = false; 
             //this.screenSharingPublisher = this.screenSharingPublisher.publishVideo(false);
-        },
-        continueScreenSharing: function() {
-            if(!this.isLecturer) return
-            this.screenSharingPublisher.publishVideo(true);
         },
         displayFile: async function(index) {
             try {
@@ -877,7 +852,7 @@ export default {
         },
         addFile: function(i) {
             if(this.files[i].resource_type == 'document' || this.files[i].resource_type == 'others') {
-                this.setNewTab(this.returnWantedTab(FILEVIEWER, this.files[i]))
+                this.setNewTab(this.getTab(FILEVIEWER, this.files[i]))
             } else if(this.files[i].resource_type == 'video') {
                 this.addVideo(i)
             }
@@ -886,7 +861,8 @@ export default {
         },
         setActiveTab: function() {
             if(!this.isLecturer) return
-            this.active_tab = this.workSpaceTabs.length - 1;
+            this.changeTab(this.workSpaceTabs.length - 1);
+
         },
         sendNewTab: function(tabName) {
             if(!this.isLecturer) return
@@ -932,13 +908,6 @@ export default {
             this.studentsRole = students;
            turnStudentOff(role, this.sessionId);
         },
-        searchVideo: function() {
-            if(this.youtubeId.trim().length > 0) {
-                const id = this.$youtube.getIdFromUrl(this.youtubeId.trim())
-                this.videoId = id;
-                sendYoutube(this.sessionId, id, this.email);
-            }
-        }
     },
     computed: {
         activeTabs: function() {
@@ -949,20 +918,11 @@ export default {
             return this.sessionId
         },
         isLecturer() {
-            window.console.log("THIS.ROLE",this.$store.getters.currentSession.role)
-            return isLecturerMou(this.$store.getters.currentSession.role)
+            return authStore.state.session.role.split("-")[0] == 'lecturer'
         },
         currentNumberOfSameTab: function(nameOfTab) {
             return this.workSpaceTabs.filter(tab => tab.name == nameOfTab).length
         }
-    },
-    watch: {
-        active_tab: function() {
-            this.handleTabChange(this.active_tab)
-        }
-    },
-    beforeDestroy() {
-        this.editor.destroy();
     },
 }
 </script>

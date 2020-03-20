@@ -75,11 +75,11 @@ const routes = [
       if(!Cookies.get('user')) {
         return next('/user/login');
       }
-      if(store.getters.currentSession.loggedIn && store.getters.currentRoomActive) {
+      if(authStore.state.session.sessionId) {
         next()
       }else {
         window.console.log(to, store.getters.currentRoomActive, store.getters.currentSession)
-        next(`/waiting/${to.params.id}`)
+        next(`/session/all`)
       }
     }
   },

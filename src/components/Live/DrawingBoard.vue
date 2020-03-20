@@ -14,7 +14,7 @@
         <template v-slot:activator="{ on }">
         <div v-on:click="draw" v-on="on" class="toolbar-item"><i class="material-icons white-icon">color_lens</i></div>
         </template>
-        <div class="toolbar-item-menu">
+        <div class="toolbar-item-menu" style="background-color: white; ">
             <div v-for="(color,index) in colors" v-bind:key="color" class="item" v-on:click="setColor(index)">
                 <div  v-bind:style='{ backgroundColor: color, width: "30px", height: "30px", borderRadius: "30px" }' class="item"></div>
             </div>
@@ -33,7 +33,7 @@
         <template v-slot:activator="{ on }">
         <div v-on:click="activatePen" v-on="on" class="toolbar-item"><i class="material-icons white-icon">edit</i></div>
         </template>
-        <div class="toolbar-item-menu">
+        <div class="toolbar-item-menu" style="background-color: white; ">
             <div class="item" v-on:click="setPenSize(0)">
                 <div class="item-outer-1 black-background"></div>
             </div>
@@ -58,7 +58,7 @@
         <template v-slot:activator="{ on }">
             <div v-on:click="activateEraser" class="toolbar-item" v-on="on"><i class="material-icons white-icon eraser">crop_portrait</i></div>
         </template>
-        <div class="toolbar-item-menu">
+        <div class="toolbar-item-menu" style="background-color: white; ">
             <div class="item" v-on:click="setEraserSize(0)">
                 <div class="item-outer-1 border"></div>
             </div>
@@ -70,7 +70,7 @@
             </div>
         </div>
       </v-menu>
-        <div class="toolbar-item"><i class="material-icons white-icon">text_fields</i></div>
+        <!-- <div class="toolbar-item"><i class="material-icons white-icon">text_fields</i></div> -->
         <div class="toolbar-item" v-on:click="clearCanvas()">Clear</div>
         </div>
         <!-- <canvas :id="id"></canvas>
@@ -120,7 +120,7 @@ class Draw {
         })
     }
 
-    constructor(id, sessionId, role, email){
+    constructor(id, sessionId, role, email, index, bigData){
         this.sessionId = sessionId;
         this.role = role;
         this.isLecturer = false;
@@ -128,24 +128,35 @@ class Draw {
         this.color = '#a713f7';
         this.width = 6;
         this.email = email;
-        var width = 1000;
-        var height = 600;
+        this.stageWidth = 1000;
+        this.stageHeight = 600;
+        this.index = index;
+
+        if(bigData.length > 0) {
+            window.console.log("BIG DATA", bigData.length, bigData)
+            this.stage = Konva.Node.create(bigData, id)
+            this.layer = this.stage.getLayers()[0]
+            window.console.log("this.stage.getLayer()",this.stage.getLayers()[0])
+        } else {
+             this.stage = new Konva.Stage({
+                container: id,
+                width: this.stageWidth,
+                height: this.stageHeight
+            })
+            this.layer = new Konva.Layer();
+            this.stage.add(this.layer);
+        }
 
       // first we need Konva core things: stage and layer
-        this.stage = new Konva.Stage({
-            container: id,
-            width: width,
-            height: height
-        })
 
-        this.layer = new Konva.Layer();
-        this.stage.add(this.layer);
+        window.console.log("Stage", this.stage)
 
         if(isLecturer(this.role)) {
             this.isLecturer = true;
             this.setUplecturerPrivilege();
             this.stage.container().style.cursor = 'crosshair';
         }
+
     }
 
 
@@ -169,7 +180,8 @@ class Draw {
 
         this.stage.on('mouseup touchend', function() {
             if(!self.isLecturer) return
-            sendDrawing(self.stage.toJSON(),1, self.sessionId, self.email)
+            window.console.log(self.stage.toJSON())
+            sendDrawing(self.stage.toJSON(), self.index, self.sessionId, self.email)
             self.isPaint = false;
         });
 
@@ -191,7 +203,7 @@ class Draw {
 
 export default {
     name: 'drawing-board',
-    props: ['id', 'datas', 'role', 'sessionId', 'email'],
+    props: ['id', 'role', 'sessionId', 'email', 'index', 'bigData'],
     data: function () {
         return {
                 colors: [
@@ -227,12 +239,14 @@ export default {
             }
         },
     mounted() {
-        this.draw = new Draw(this.id, this.sessionId, this.role, this.email);
-         myEmitter.on('event', (data) => {
+        this.draw = new Draw(this.id, this.sessionId, this.role, this.email, this.index, this.bigData);
+        myEmitter.on('event', (data) => {
             window.console.log("Latata", data);
             if(data.email !== this.email) {
-                window.console.log(data)
-                window.console.log(Konva.Node.create(data.data, this.id));
+                if(this.index == data.index) {
+                    window.console.log("LATATAT INDEX Matches", data)
+                    window.console.log(Konva.Node.create(data.data, this.id));   
+                }
             }
         })
     },
@@ -256,12 +270,15 @@ export default {
         setColor(index) {
             if(!this.isLecturer) return
             this.draw.setColor(this.colors[index]);
+            this.draw.setMode("brush")
         },
         clearCanvas() {
             if(!this.isLecturer) return
+            window.console.log(this.draw.getLayer())
             this.draw.getLayer().destroyChildren();
+            //this.draw.getLayer().clear();
             this.draw.getLayer().batchDraw();
-            sendDrawing(this.draw.getStage().toJSON(), 1, this.sessionId,this.email)
+            sendDrawing(this.draw.getStage().toJSON(), this.index, this.sessionId,this.email)
         }
     },
     computed: {
