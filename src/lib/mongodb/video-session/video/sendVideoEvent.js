@@ -1,10 +1,11 @@
 import axiosInstance from "../../../axios/axiosInstance";
 
-const sendVideoLink = (sessionId, email, event) => {
+const sendVideoEvent = (sessionId, email, event, index) => {
     return axiosInstance.post(`/video/${sessionId}/sendVideoEvent`, {
         event,
         email,
+        index
     })
 }
 
-export default sendVideoLink;
+export default sendVideoEvent;

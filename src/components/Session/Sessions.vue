@@ -1,57 +1,93 @@
 <template>
     <div style="position: relative; " >
-        <div v-show="scrolled" class="navbar" style="padding: 20px; align-items: center; justify-content: flex-end; display: flex; position: absolute; left: 0; right: 0; z-index: 100; background-color: white; height: 60px; ">
-            <v-row no-gutters style="flex-grow: 1; ">
-                <v-col
-                    :key="1"
-                    :cols="11"
+
+        <v-dialog
+            v-model="remove"
+            max-width="290"
+            >
+            <v-card>
+                <v-card-title class="headline">Delete this class ?</v-card-title>
+
+                <v-card-text>
+                    Are you sure you want to delete the class? 
+                </v-card-text>
+
+                <v-card-actions>
+                <v-spacer></v-spacer>
+
+                <v-btn
+                    color="green darken-1"
+                    text
+                    @click="remove = false"
                 >
-                   <div style="font-size: 1.5em; font-weight: 200; ">Session</div>
-                </v-col>
-                <v-col
-                    :key="1"
-                    :cols="1"
+                    Cancel
+                </v-btn>
+
+                <v-btn
+                    color="green darken-1"
+                    text
+                    @click="deleteClass"
                 >
-                   <v-btn text>View All</v-btn>
-                </v-col>
-            </v-row>
-        </div>
-        <div style="padding: 30px 40px; height: 95vh; overflow: scroll; " v-on:scroll.passive="handleScroll">
-            <v-row no-gutters>
-                <v-col
-                    :key="1"
-                    :cols="11"
-                >
-                   <div style="font-size: 1.5em; font-weight: 200; ">>All Class </div>
-                </v-col>
-                <v-col
-                    :key="1"
-                    :cols="1"
-                >
-                   <v-btn text>View All</v-btn>
-                </v-col>
-                <div v-if="sessions.length > 0" style="display: flex; padding: 20px 0; flex-wrap: wrap; justify-content: flex-start; flex-grow: 1; ">
-                    <div v-for="(session, index) in sessions" v-bind:key="session" class="e-card" @click="navigateTo(index)">
-                        <div class="e-card-image">
-                            <div class="e-card-title">{{ session.title }} </div>
-                        </div>
-                        <div class="e-card-content"> 
-                            <div>{{ new Date(session.date).getDate() + '/' + new Date(session.date).getMonth() + '/' + new Date(session.date).getFullYear() }}, {{ new Date(session.date).getHours() + ":" + new Date(session.date).getMinutes()}}</div>
-                        </div>
-                    </div>
-                </div>
-                <div v-else>
-                    <div>No class yet.</div>
-                </div>
-            </v-row>
-            
-        </div>
+                    Yes, delete
+                </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+         <v-data-table
+            :headers="headers"
+            :items="sessions"
+            sort-by="title"
+            class="elevation-1"
+        >
+            <template v-slot:top>
+            <v-toolbar flat color="white">
+                <v-toolbar-title>My Class</v-toolbar-title>
+                <v-divider
+                class="mx-4"
+                inset
+                vertical
+                ></v-divider>
+                <v-spacer></v-spacer>
+                <v-dialog v-model="dialog" max-width="500px">
+                <template v-slot:activator="{ on }">
+                    <v-btn v-if="isAdmin || isLecturer" color="primary" dark class="mb-2" @click="navigateToNewClass">New Class</v-btn>
+                </template>
+                </v-dialog>
+            </v-toolbar>
+            </template>
+            <template v-slot:item.action="{ item }">
+            <v-icon
+                small
+                class="mr-2"
+                @click="editSession(item.index)"
+            >
+                edit
+            </v-icon>
+            <v-icon
+                small
+                class="mr-2"
+                @click="navigateTo(item.index)"
+            >
+                launch
+            </v-icon>
+            <v-icon
+                small
+                @click="deleteItem(item)"
+                v-if="isAdmin || isLecturer"
+            >
+                mdi-delete
+            </v-icon>
+            </template>
+            <template v-slot:no-data>
+                <div>No class yet.</div>
+            </template>
+        </v-data-table>
     </div>
 </template>
 
 <script>
 //import FixedHeader from 'vue-fixed-header'
-import { getAllSessions } from "@/lib/mongodb/session/index";
+import { getAllSessions, deleteSession  } from "@/lib/mongodb/session/index";
 import { authStore } from "@/lib/vuex/store/index"
 
 export default {
@@ -70,9 +106,20 @@ export default {
                     return array.includes(authStore.state.user.email)
                 })
             }
-            this.sessions = data;
+            //this.sessions = data;
+            this.sessions = data.map((session, index) => {
+                window.console.log("Inside the sesison", session.lecturers[0].name)
+                return {
+                    index: index + 1,
+                    title: session.title ,
+                    lecturer: session.lecturers[0],
+                    date: session.date,
+                    _id: session._id,
+                    students: session.students
+                }
+            })
         } catch(e) {
-            alert(e);
+            throw e;
         }
     },
     created: function() {
@@ -85,35 +132,85 @@ export default {
         return {
             scrolled: false,
             lastPosition: 0,
-            sessions: []
+            sessions: [],
+            headers: [
+                { text: 'No.', value: 'index' },
+                { text: 'Course', value: 'title'},
+                { text: 'Lecturer Name', value: 'lecturer.name'},
+                { text: 'Date started', value: 'date'},
+                { text: 'Action', value: 'action'}
+            ],
+            selected: 0,
+            dialog: false,
+            remove: false
         }
     },
     methods: {
+        editSession(index) {
+            index--;
+            const session = this.sessions[index];
+            this.$router.push({ name: 'EditSession', params: {id: session._id }})
+        },
+        editItem(item) {
+            window.console.log(item.index)
+        },
+        deleteClass: async function(){
+            const id = this.sessions[this.selected]._id
+            const { data } = await deleteSession(id);
+            this.sessions = data.map((session, index) => {
+                window.console.log("Inside the sesison", session.lecturers[0].name)
+                return {
+                    index: index + 1,
+                    title: session.title ,
+                    lecturer: session.lecturers[0],
+                    date: session.date,
+                    _id: session._id,
+                    students: session.students
+                }
+            })
+            this.remove = false
+        },
+        deleteItem: async function(item) {
+            this.remove = true;
+            this.selected = item.index - 1;
+            
+        },
+        navigateToNewClass() {
+            this.$router.push({ name: 'NewSession'} )
+        },
         navigateTo(i) {
-            const data = this.sessions[i]
+            window.console.log(this.sessions);
+            const data = this.sessions[i - 1]
             window.console.log(data);
             var res;
-            if(data.lecturers[0].email == authStore.state.user.email) {
-                window.console.log("RES",data.lecturers[0]);
+            window.console.log(data)
+            if(data.lecturer.email == authStore.state.user.email) {
                 const obj = {
-                    sessionId: this.sessions[i]._id,
+                    sessionId: this.sessions[i - 1]._id,
                     email: authStore.state.user.email,
-                    role: data.lecturers[0].role
+                    role: data.lecturer.role,
+                    name: authStore.state.user.name
                 }
                 window.console.log("OBJ", obj)
                 authStore.commit('logInSession', obj);
-            } else {
+                this.$router.push({ name: 'Live', params: {id: data._id }});
+                return;
+            } else if(data.students.filter(student => student.email == authStore.state.user.email)[0]) {
+                window.console.log( data.students.filter(student => student.email == authStore.state.user.email)[0]);
                 res = data.students.filter(student => student.email == authStore.state.user.email)[0];
                 window.console.log("RES",res)
                 const obj = {
-                    sessionId: this.sessions[i]._id,
+                    sessionId: this.sessions[i - 1]._id,
                     email: authStore.state.user.email,
-                    role: res.role
+                    role: res.role,
+                    name: authStore.state.user.name
                 }
                 window.console.log("OBJ", obj)
                 authStore.commit('logInSession', obj);
+                this.$router.push({ name: 'Live', params: {id: data._id }})
+                return;
             }
-            this.$router.push({ name: 'Live', params: {id: data._id }})
+            alert("You are not added to this class"); 
         },
         handleScroll(e) {
             window.console.log(this.scrolled, window.scrollY, e)
@@ -126,6 +223,14 @@ export default {
             }
             
             this.lastPosition = e.target.scrollTop;
+        },
+    },
+    computed: {
+        isAdmin() {
+            return authStore.state.user.role.includes('admin');
+        },
+        isLecturer() {
+            return authStore.state.user.role.includes('lecturer');
         }
     }
 }

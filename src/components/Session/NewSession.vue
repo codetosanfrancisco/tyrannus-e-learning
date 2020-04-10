@@ -9,7 +9,7 @@
           max-width="290"
         >
         <v-card>
-          <v-card-title class="headline">Session is created!</v-card-title>
+          <v-card-title class="headline">Class is created!</v-card-title>
 
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -19,37 +19,37 @@
               text
               @click="navigateTo('Sessions')"
             >
-              Go To All Sessions
+              Go To All Classes
             </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <div style="font-size: 1.5em; font-weight: 200; ">Schedule New Session</div>
+      <div style="font-size: 1.5em; font-weight: 200; ">Schedule New Class</div>
       <form id="form1" style="width: 100%; display: flex; flex-direction: column; flex-grow: 1; ">
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-                <ejs-textbox  v-model="form.title" name="Title" data-required-message="* Enter the title of the session" required="" data-msg-containerid="titleError" id='textbox' floatLabelType="Auto" placeholder="Title of The Session"></ejs-textbox>
+                <ejs-textbox  v-model="form.title" name="Title" data-required-message="* Enter the title of the class" required="" data-msg-containerid="titleError" id='textbox' floatLabelType="Auto" placeholder="Title of The class"></ejs-textbox>
             </div>
             <div id="titleError"></div>
         </div>
 
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-                <ejs-datepicker :value="form.date" :strictMode='true' :format="dateFormat" placeholder="Pick a date" name="Date" data-required-message="* Pick the date of the session" required="" data-msg-containerid="dateError" :min="minDate"></ejs-datepicker>
+                <ejs-datepicker :value="form.date" :strictMode='true' :format="dateFormat" placeholder="Pick a date" name="Date" data-required-message="* Pick the date of the class" required="" data-msg-containerid="dateError" :min="minDate"></ejs-datepicker>
             </div>
             <div id="dateError"></div>
         </div>
 
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-                <ejs-timepicker v-model="form.time" placeholder="Pick a time" name="Time" data-required-message="* Pick the time of the session" required="" data-msg-containerid="timeError"></ejs-timepicker>
+                <ejs-timepicker v-model="form.time" placeholder="Pick a time" name="Time" data-required-message="* Pick the time of the class" required="" data-msg-containerid="timeError"></ejs-timepicker>
             </div>
             <div id="timeError"></div>
         </div>
 
         <div class="form-group" style="flex-grow: 1">
             <div class="e-float-input">
-                <ejs-dropdownlist :dataSource='lecturerDatas' @change="handleChange" v-model="form.lecturers" id='dropdownlist' placeholder="Pick a lecturer" name="Lecturer" data-required-message="* Pick a lecturer for the session" required="" data-msg-containerid="lecturerError"></ejs-dropdownlist>
+                <ejs-dropdownlist :dataSource='lecturerDatas' @change="handleChange" v-model="form.lecturers" id='dropdownlist' placeholder="Pick a lecturer" name="Lecturer" data-required-message="* Pick a lecturer for the class" required="" data-msg-containerid="lecturerError"></ejs-dropdownlist>
             </div>
             <div id="lecturerError"></div>
         </div>
@@ -104,7 +104,7 @@ export default {
       return {
         isLoading: false,
         fullPage: true,
-        fields : { text: 'Game', value: 'Id' },
+        fields : { text: 'email', value: 'Id' },
         showSelectAll : true,
         dialog: false,
         studentDatas: [],
@@ -159,16 +159,21 @@ export default {
       handleChange: function(event) {
         this.form.students = [];
         this.studentDatas = this.originalStudentDatas.filter(student => student.Id != event.value);
+        window.console.log("The Condition in the form", this.form.lecturers,this.form)
       },
       onFormSubmit: async function() {
             let formStatus = this.formObj.validate();
             if (formStatus) {
+                const lecturer = this.lecturers.filter(lecturer => lecturer.email == this.form.lecturers)
+                const students = this.students.filter(student => this.form.students.includes(student.email))
                 let form = {
                   ...this.form,
                   date: this.form.date.toLocaleString(),
                   time: this.form.time.toLocaleString(),
-                  lecturers: [this.form.lecturers]
+                  lecturers: lecturer,
+                  students
                 }
+                window.console.log("FORM", form)
                 this.isLoading = true;
                 try {
                   await createSession(form);
@@ -197,21 +202,23 @@ export default {
 
       if(authStore.state.user.role.includes('student') ||  authStore.state.user.role.includes('admin')) {
         lecturers = lecturers.map(lecturer => {
-            return lecturer.email
+            return { name: lecturer.name, email: lecturer.email }
         })
 
         if(authStore.state.user.role.includes('lecturer') && !authStore.state.user.role.includes('admin')) {
-           lecturers = [authStore.state.user.email];
+           lecturers = [{ name: authStore.state.user.name, email: authStore.state.user.email} ];
         } 
       } else if(authStore.state.user.role.includes('lecturer')) {
-           lecturers = [authStore.state.user.email];
+           lecturers = [{ name: authStore.state.user.name, email: authStore.state.user.email} ];
       } 
       students = students.map(student => {
-        return { Id: student.email, Game: student.email }
+        return { Id: student.email, email: student.email, name: student.name }
       });
+      this.students = students;
+      this.lecturers = lecturers;
       this.studentDatas = students;
       this.originalStudentDatas = students;
-      this.lecturerDatas = lecturers;
+      this.lecturerDatas = lecturers.map(lecturer => lecturer.email);
       window.console.log("STUDENTS", students)
     }
 }

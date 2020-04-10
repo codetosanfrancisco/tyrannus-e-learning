@@ -45,13 +45,16 @@
         </v-list>
       </v-navigation-drawer>
       <v-data-table
-    :headers="headers"
-    :items="admins"
-    class="elevation-1"
-  >
+        :headers="headers"
+        :items="admins"
+        class="elevation-1"
+      >
+      <template v-slot:item.password="{ item }">
+        <v-chip dark>*******</v-chip>
+      </template>
     <template v-slot:top>
       <v-toolbar flat color="white">
-        <v-toolbar-title>My CRUD</v-toolbar-title>
+        <v-toolbar-title>My Admins</v-toolbar-title>
         <v-divider
           class="mx-4"
           inset
@@ -147,7 +150,13 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
           sortable: false,
           value: 'no',
         },
+        { text: 'User ID', value: '_id'},
+        { text: 'Password', value: 'password', class: "data-table-password"},
         { text: 'Email', value: 'email' },
+        { text: 'Name', value: 'name' },
+        { text: 'Location', value: 'location' },
+        // { text: 'Role', value: 'role' },
+        { text: 'Status', value: 'status'},
         { text: 'Action', value: 'action' }
       ],
       lheaders: [
@@ -157,6 +166,7 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
           sortable: false,
           value: 'no',
         },
+        { text: 'Name', value: 'name' },
         { text: 'Email', value: 'email' },
         { text: 'Add As Admin', value: 'addAsAdmin' },
       ],
@@ -200,7 +210,9 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
         let { data: admins } = await getUsers('admin');
         admins = admins.map((student, index) => {
           return{
-            ...student, no: index + 1
+            ...student, no: index + 1,
+            status: 'active', 
+            location: student.location ? student.location : "Malaysia"
           }   
         })
 
@@ -215,9 +227,7 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
             addAsAdmin: false,
           }
         })
-        window.console.log(difference)
         this.admins = admins;
-        window.console.log("Nani", this.admins, this.lecturers);
       },
 
       editItem (item) {
@@ -245,18 +255,16 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
       },
 
       save: async function() {
-        window.console.log(this.lecturers);
         const newAdmins = this.lecturers.filter(lecturer => lecturer.addAsAdmin).map(lecturer => {
           return lecturer._id;
         })
-        window.console.log("New Admin", newAdmins)
         //Update as lecturer
         try {
           await updateUserRole(newAdmins, 'admin')
           this.close()
         } catch(e) {
-          window.console.log(e)
           this.close()
+          throw e;
         }
       },
     },

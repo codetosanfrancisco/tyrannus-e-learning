@@ -3,18 +3,18 @@
         style="height: 100vh; "
         :right="right"
         absolute
-        class="deep-purple accent-4"
         dark
         permanent
       >
         <v-list>
+            <v-img src="@/assets/images/logo.png" style="width: 90%; margin: auto; margin-bottom: 25px; "/>
             <v-list-item two-line :class="miniVariant && 'px-0'">
             <v-list-item-avatar>
               <img src="https://randomuser.me/api/portraits/men/81.jpg">
             </v-list-item-avatar>
 
             <v-list-item-content>
-              <v-list-item-title>{{ email }}</v-list-item-title>
+              <v-list-item-title>{{ name }}</v-list-item-title>
               <v-list-item-subtitle>{{ role }}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>
@@ -66,6 +66,7 @@ export default {
     mounted: function() {
       this.email = authStore.state.user.email
       this.role = authStore.state.user.role.sort()[0]
+      this.name = authStore.state.user.name
     },
     name: "SideBar",
     data: function() {
@@ -88,13 +89,13 @@ export default {
             view: false,
             items: [
               { title: 'Admin' , route: 'Admin', view: false, lecturerCanView: false},
-              { title: 'Lecturers', route: 'Lecturers', view: false, lecturerCanView: true },
+              { title: 'Lecturers', route: 'Lecturers', view: false, lecturerCanView: false },
               { title: 'Students', route: 'Students',view: false , lecturerCanView: true},
             ],
           },
           {
             action: 'date_range',
-            title: 'Sessions',
+            title: 'Classes',
             active: true,
             view: true,
             items: [
@@ -125,7 +126,7 @@ export default {
             Cookies.remove('user')
             this.$router.push({ name: 'UserLogin' })
           }catch(e) {
-            alert("Error Occurred!")
+            throw e;
           }
         }
     },

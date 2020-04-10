@@ -49,9 +49,12 @@
     :items="lecturers"
     class="elevation-1"
   >
+    <template v-slot:item.password="{ item }">
+      <v-chip dark>*******</v-chip>
+    </template>
     <template v-slot:top>
       <v-toolbar flat color="white">
-        <v-toolbar-title>My CRUD</v-toolbar-title>
+        <v-toolbar-title>My Lecturers</v-toolbar-title>
         <v-divider
           class="mx-4"
           inset
@@ -147,7 +150,13 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
             sortable: false,
             value: 'no',
           },
+          { text: 'User ID', value: '_id'},
+          { text: 'Password', value: 'password', class: "data-table-password"},
           { text: 'Email', value: 'email' },
+          { text: 'Name', value: 'name' },
+          { text: 'Location', value: 'location' },
+          // { text: 'Role', value: 'role' },
+          { text: 'Status', value: 'status'},
           { text: 'Actions', value: 'action', sortable: false },
         ],
         addLecturerHeaders: [
@@ -157,6 +166,7 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
             sortable: false,
             value: 'no',
           },
+          { text: 'Name', value: 'name' },
           { text: 'Email', value: 'email' },
           { text: 'Add As Lecturer', value: 'addAsLecturer' },
         ],
@@ -177,10 +187,16 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
             return {
               ...student,
               addAsLecturer: false,
-              no: index + 1
+              no: index + 1,
             }
           });
-          this.lecturers = lecturers;
+          this.lecturers = lecturers.map((lecturer,index ) => {
+            return {
+              ...lecturer, no: index + 1, 
+              status: 'active', 
+              location: lecturer.location ? lecturer.location : "Malaysia"
+            }
+          });
           this.students = students;
           window.console.log(students, lecturers);
        }  
@@ -249,10 +265,12 @@ import { getUsers, updateUserRole, removeUserRole  } from "@/lib/mongodb/users/i
         })
         //Update as lecturer
         try {
-          const { data: lecturers } = await updateUserRole(newLecturers, 'lecturer')
+          const { data: lecturers } = await updateUserRole(newLecturers, 'lecturer');
           this.lecturers = lecturers.map((lecturer, index) => {
             return{
-              ...lecturer, no: index + 1
+              ...lecturer, no: index + 1,
+              status: 'active', 
+              location: lecturer.location ? lecturer.location : "Malaysia"
             }   
           })
           let { data: students } = await getUsers('student');

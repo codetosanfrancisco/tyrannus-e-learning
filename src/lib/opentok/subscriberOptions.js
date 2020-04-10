@@ -5,7 +5,7 @@ var subscriberOptions = {
     style: {
         buttonDisplayMode: 'off',
         nameDisplayMode: "off"
-    }
+    },
 }
 
 export default subscriberOptions;

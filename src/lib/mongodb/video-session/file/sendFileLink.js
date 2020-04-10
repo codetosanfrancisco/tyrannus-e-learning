@@ -1,8 +1,8 @@
 import axiosInstance from "../../../axios/axiosInstance";
 
-const sendFileLink = (sessionId, email, file) => {
-    return axiosInstance.post(`/video/${sessionId}/sendFileLink`, {
-        file,
+const sendFileLink = (sessionId, email, index) => {
+    return axiosInstance.post(`/file/${sessionId}/sendFileLink`, {
+        index,
         email,
     })
 }

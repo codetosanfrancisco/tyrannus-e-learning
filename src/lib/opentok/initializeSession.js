@@ -8,7 +8,7 @@ import Vue from 'vue';
 // Handling all of our errors here by alerting them
 const handleError = (error) => {
     if (error) {
-      alert(error.message);
+      throw error;
     }
   }
 
@@ -19,16 +19,16 @@ const isLecturer = (role) => {
 const initializeSession = (self, token, sessionId, cb, showFullScreen) => {
 
 
-    var { role, email, addStudent, removeStudent } = self;
+    var { role, email, addStudent, removeStudent, name } = self;
     var session = OT.initSession(apiKey, sessionId), publisher;
 
     if(!isLecturer(role)) {
-        addStudent(role, email);
+        addStudent(role, email, name);
     }
 
     Vue.nextTick(function() {
         // Create a publisher
-        publisher = OT.initPublisher(role,{ ...publisherOptions, name: `${role} ${email}` }, handleError);
+        publisher = OT.initPublisher(role,{ ...publisherOptions, name: `${role} ${email}`}, handleError);
 
         publisher.setStyle({buttonDisplayMode: "off"});
 
@@ -40,7 +40,7 @@ const initializeSession = (self, token, sessionId, cb, showFullScreen) => {
             // If the connection is successful, publish to the session
             if (error) {
                 //handleError(error);
-                alert(error)
+                throw error;
             } else {
                 session.publish(publisher, handleError);
             }
@@ -50,12 +50,14 @@ const initializeSession = (self, token, sessionId, cb, showFullScreen) => {
             var [roleStudent, emailStudent] = event.stream.name.split(" ");
             window.console.log("Role Student", roleStudent, emailStudent)
             if(!isLecturer(roleStudent) && !document.getElementById(roleStudent)) {
-                addStudent(roleStudent, emailStudent);
+                addStudent(roleStudent, emailStudent, name);
             }
             Vue.nextTick(function() {
 
                 if(event.stream.videoType === 'screen') {
                     showFullScreen()
+                    session.subscribe(event.stream, roleStudent, { ...subscriberOptions, fitMode: 'contain' }, handleError);
+                    return;
                 }
 
                 session.subscribe(event.stream, roleStudent, subscriberOptions, handleError);

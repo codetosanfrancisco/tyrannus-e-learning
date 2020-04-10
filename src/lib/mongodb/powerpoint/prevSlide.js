@@ -1,8 +1,9 @@
 import axiosInstance from "../../axios/axiosInstance";
 
-const prevSlide = (sessionId, email) => {
+const prevSlide = (sessionId, email, fileIndex) => {
     return axiosInstance.post(`/powerpoint/${sessionId}/prev`, {
-        email
+        email,
+        fileIndex
     })
 }
 

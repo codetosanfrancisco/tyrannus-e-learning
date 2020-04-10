@@ -1,6 +1,6 @@
 <template>
     <div style="height: 100%;">
-        <div class="whiteboard-toolbar">
+        <div class="whiteboard-toolbar" v-show="isLecturer">
         <v-menu
         v-model="value"
         :disabled="disabled"
@@ -113,13 +113,6 @@ class Draw {
         return this.stage;
     }
 
-    setUpForText() {
-        this.stage.on('dblclick', function() {
-            //var mousePos = this.stage.getPointerPosition();
-            alert("Hi")
-        })
-    }
-
     constructor(id, sessionId, role, email, index, bigData){
         this.sessionId = sessionId;
         this.role = role;
@@ -133,10 +126,8 @@ class Draw {
         this.index = index;
 
         if(bigData.length > 0) {
-            window.console.log("BIG DATA", bigData.length, bigData)
             this.stage = Konva.Node.create(bigData, id)
             this.layer = this.stage.getLayers()[0]
-            window.console.log("this.stage.getLayer()",this.stage.getLayers()[0])
         } else {
              this.stage = new Konva.Stage({
                 container: id,
@@ -149,7 +140,6 @@ class Draw {
 
       // first we need Konva core things: stage and layer
 
-        window.console.log("Stage", this.stage)
 
         if(isLecturer(this.role)) {
             this.isLecturer = true;
@@ -164,7 +154,6 @@ class Draw {
         var self = this;
         this.isPaint = false;
         this.lastLine;
-        this.setUpForText();
         this.stage.on('mousedown touchstart', function() {
             self.isPaint = true;
             var pos = self.stage.getPointerPosition();
@@ -180,8 +169,7 @@ class Draw {
 
         this.stage.on('mouseup touchend', function() {
             if(!self.isLecturer) return
-            window.console.log(self.stage.toJSON())
-            sendDrawing(self.stage.toJSON(), self.index, self.sessionId, self.email)
+            sendDrawing(self.lastLine, self.stage.toJSON(), self.index, self.sessionId, self.email)
             self.isPaint = false;
         });
 
@@ -241,11 +229,20 @@ export default {
     mounted() {
         this.draw = new Draw(this.id, this.sessionId, this.role, this.email, this.index, this.bigData);
         myEmitter.on('event', (data) => {
-            window.console.log("Latata", data);
             if(data.email !== this.email) {
                 if(this.index == data.index) {
-                    window.console.log("LATATAT INDEX Matches", data)
-                    window.console.log(Konva.Node.create(data.data, this.id));   
+
+                    if(data.data != "clear") {
+                        var obj = new Konva.Line();
+                        var attrs = JSON.parse(data.data).attrs
+                        obj.setAttrs(attrs)
+                        this.draw.getLayer().add(obj);
+                        this.draw.getLayer().batchDraw();   
+                    } else {
+                        this.draw.getLayer().destroyChildren();
+                        //this.draw.getLayer().clear();
+                        this.draw.getLayer().batchDraw();
+                    }
                 }
             }
         })
@@ -274,11 +271,10 @@ export default {
         },
         clearCanvas() {
             if(!this.isLecturer) return
-            window.console.log(this.draw.getLayer())
             this.draw.getLayer().destroyChildren();
             //this.draw.getLayer().clear();
             this.draw.getLayer().batchDraw();
-            sendDrawing(this.draw.getStage().toJSON(), this.index, this.sessionId,this.email)
+            sendDrawing("clear", this.draw.getStage().toJSON(), this.index, this.sessionId,this.email)
         }
     },
     computed: {

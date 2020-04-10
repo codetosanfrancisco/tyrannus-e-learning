@@ -7,7 +7,8 @@ const authStore = new Vuex.Store({
       session: {
         email: null,
         role: null,
-        sessionId: null
+        sessionId: null,
+        name: null
       }
     },
     mutations: {

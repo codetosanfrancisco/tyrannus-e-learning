@@ -1,11 +1,11 @@
 import axiosInstance from "../../axios/axiosInstance";
 
-const signUpUser = (email, password, dbName) => {
+const signUpUser = (name, email, password) => {
     window.console.log(email, password)
     return axiosInstance.post("/user/signUp", {
+        name, 
         email,
         password,
-        dbName
     })
 }
 
