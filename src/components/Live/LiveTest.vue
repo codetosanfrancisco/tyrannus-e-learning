@@ -83,6 +83,52 @@
             </v-row>
         </v-card>
     </v-dialog>
+    <v-navigation-drawer
+      v-model="messageDrawer"
+      absolute
+      width="25%"
+      :right="true"
+      :hide-overlay="true"
+      style="z-index: 1000; "
+    >
+        <div style="display: flex; flex-direction: column; height: 100%; ">
+            <div>
+            <div style="padding: 0 10px; display: flex; justify-content: space-between; align-items: center; width: 100%; ">
+                <div>Chat</div>
+                <div>
+                    <v-btn class="ma-2" tile small color="black" icon @click="messageDrawer = false; ">
+                        <v-icon>cancel</v-icon>
+                    </v-btn>
+                </div>
+            </div>
+        </div>
+
+        <v-divider></v-divider>
+        
+        <div class="chatbox">
+            <div class="chatbox__message">
+                <div class="message">
+                    <div class="message__content">Hello World</div>
+                    <div class="message__details">
+                        <div class="message__sender">Voon Shun Zhi</div>
+                        <div class="message__time">11.30am</div>
+                    </div>
+                </div>
+            </div>
+            <div class="chatbox__input">
+                <div class="chatbox__textbox">
+                    <textarea v-model="message"  placeholder="Type your message here" class="chatbox__mou"></textarea>
+                </div>
+                <div class="chatbox__icon">
+                    <v-btn tile color="white" icon @click="sendMessage">
+                        <v-icon>send</v-icon>
+                    </v-btn>
+                </div>
+            </div>
+        </div>
+
+        </div>
+    </v-navigation-drawer>
     <div class="live-navbar" style="height: 80px; ">
         <div v-if="isLecturer" style="height: 100%; ">
             <v-row style="height: 100%; "> 
@@ -91,6 +137,9 @@
                 </v-col>
                 <v-col cols="2" style="display: flex; justify-content: flex-end; ">
                     <div style="display: flex; ">
+                        <v-btn class="ma-2" tile small color="white" icon @click="openChat">
+                            <v-icon>message</v-icon>
+                        </v-btn>
                         <v-menu
                         transition="slide-y-transition"
                         offset-y
@@ -666,6 +715,8 @@ export default {
                 { text: 'Name', value: 'display_name'},
                 { text: 'Actions', value: 'actions', sortable: false },
             ],
+            message: '',
+            messageDrawer: false,
             tabsData: [],
             screenShareSnackbar: false,
             fullScreen: false,
@@ -710,6 +761,12 @@ export default {
         }
     },
     methods: {
+        sendMessage: function() {
+            alert(this.message)
+        },
+        openChat: function() {
+            this.messageDrawer = true;
+        },
         submitVideoLink: async function (index) {
             var video = this.workSpaceTabs[index].youtubeUrl.split('v=')[1];
             window.console.log(video);
