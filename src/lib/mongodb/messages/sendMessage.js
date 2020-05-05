@@ -1,10 +1,9 @@
 import axiosInstance from "../../axios/axiosInstance";
 
-const sendMessage = (email, body, dbName, sessionId) => {
+const sendMessage = (name, body, sessionId) => {
     return axiosInstance.post(`/message/${sessionId}`, {
-        email,
-        body,
-        dbName
+        name,
+        body
     })
 }
 

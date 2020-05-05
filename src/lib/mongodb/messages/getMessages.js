@@ -1,6 +1,6 @@
 import axiosInstance from "../../axios/axiosInstance";
 
-const getMessages = (dbName, sessionId) => {
+const getMessages = (sessionId) => {
     return axiosInstance.post(`/messages/${sessionId}`)
 }
 

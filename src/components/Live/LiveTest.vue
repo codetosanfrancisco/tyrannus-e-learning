@@ -106,12 +106,12 @@
         <v-divider></v-divider>
         
         <div class="chatbox">
-            <div class="chatbox__message">
-                <div class="message">
-                    <div class="message__content">Hello World</div>
+            <div id="chatbox" class="chatbox__message">
+                <div v-for="message in messages" v-bind:key="message" v-bind:class="{ 'message': true,  'message--right': message.name == name}" >
+                    <div class="message__content">{{ message.body }}</div>
                     <div class="message__details">
-                        <div class="message__sender">Voon Shun Zhi</div>
-                        <div class="message__time">11.30am</div>
+                        <div class="message__sender">{{ message.name == name ? 'me' :  message.name }}</div>
+                        <div class="message__time">{{ new Date(message.timeCreated).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }) }}</div>
                     </div>
                 </div>
             </div>
@@ -136,7 +136,10 @@
                     <div class="pl-3" style="display: flex; align-items: center; "><div class="mr-5" style="display: flex; justify-content: center; align-items: center; "> <v-img src="@/assets/images/icon.png" max-width="40" style="margin: 10px; "/><span style="font-weight: 800; ">Tyrannus Online Seminary</span></div><span style="font-weight: 800; ">Lecturer Portal</span> <span class="mx-3">Course: <span  style="font-weight: 800; ">{{ sessionTitle }}</span> </span> Lecturer: <span style="font-weight: 800; ">{{ name }}</span></div>
                 </v-col>
                 <v-col cols="2" style="display: flex; justify-content: flex-end; ">
-                    <div style="display: flex; ">
+                    <div style="display: flex; align-items: center; ">
+                        <v-btn class="ma-2" outlined color="white" @click="handleRecording"> 
+                            {{ this.recording ? "Stop Recording" : "Record" }}
+                        </v-btn>
                         <v-btn class="ma-2" tile small color="white" icon @click="openChat">
                             <v-icon>message</v-icon>
                         </v-btn>
@@ -211,8 +214,36 @@
         </div>
         <div v-else style="height: 80px; ">
             <v-row>
-                <v-col cols="8" style="display: flex; align-items: center; ">
+                <v-col cols="11" style="display: flex; align-items: center; ">
                     <div class="pl-3"><span class="mx-2">Tyrannus Online Seminary</span> Student Portal <span class="mx-3" style="font-weight: 600; ">Course: {{ sessionTitle }}</span> Student: {{ name }}</div>
+                </v-col>
+                <v-col cols="1">
+                    <v-btn class="ma-2" tile small color="white" icon @click="openChat">
+                        <v-icon>message</v-icon>
+                    </v-btn>
+                     <v-menu
+                        transition="slide-y-transition"
+                        offset-y
+                        >
+                        <template v-slot:activator="{ on }">
+                            <v-btn class="ma-2" tile small color="white" icon v-on="on">
+                                <v-icon>settings</v-icon>
+                            </v-btn>
+                        </template>
+                        <v-list>
+                            <v-list-item
+                            @click="goToAllClass"
+                            >
+                                <v-list-item-title>All Class</v-list-item-title>
+                            </v-list-item>
+
+                            <v-list-item
+                            v-on:click="this.showEndSessionModal"
+                            >
+                                <v-list-item-title>Exit Class</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                        </v-menu>
                 </v-col>
             </v-row>
         </div>
@@ -393,7 +424,8 @@
                 <div class="video-control-buttons-end">
                     <v-btn color="error control-button" v-on:click="this.showEndSessionModal"><v-icon class="end-call">phone</v-icon></v-btn>
                 </div>
-            </div>
+
+               </div>
         </div>
     </div>
     </div>
@@ -417,6 +449,7 @@ import { sendFileLink ,submitPdf, deleteFileLink } from "@/lib/mongodb/video-ses
 import { nextSlide, prevSlide } from "@/lib/mongodb/powerpoint/index";
 import { sendFullScreen } from "@/lib/mongodb/video-session/screenshare/index"
 import { authStore } from "@/lib/vuex/store/index"
+import { sendMessage, getMessages } from "@/lib/mongodb/messages/index"
 import Vue from 'vue';
 
 const VIDEO = 'VIDEO';
@@ -498,10 +531,21 @@ export default {
             this.role = authStore.state.session.role;
             this.zerolecturer = lecturers.filter(lecturer => lecturer.role == "lecturer-0")[0];
             const socket = await io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
-
+            const { data: { messages } } = await getMessages(this.sessionId);
+            window.console.log("CHAT",messages);
+            this.messages = messages;
+            $('#chatbox').scrollTop(1000000);
             // Once connect, emit sessionId to join the matching room
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
+                socket.on('message', function(data) {
+                    window.console.log("Hello World");
+                    window.console.log(data);
+                    self.messages = data;
+                    Vue.nextTick(function() {
+                        $('#chatbox').scrollTop(1000000)
+                    })
+                })
             });
 
              // Get All Existing tabs
@@ -560,6 +604,7 @@ export default {
                     })
                 }
             })
+
 
             socket.on('remove-tab', function(data) {
                 if(self.email !== data.email) {
@@ -715,6 +760,8 @@ export default {
                 { text: 'Name', value: 'display_name'},
                 { text: 'Actions', value: 'actions', sortable: false },
             ],
+            recorder: null,
+            messages: [],
             message: '',
             messageDrawer: false,
             tabsData: [],
@@ -735,8 +782,10 @@ export default {
             library: false,
             active_tab: null,
             workSpaceTabs: [],
+            recordingBlobs: [],
             files: [],
             sharingMyScreen: false,
+            recording: false,
             editorOption: {
                 modules: {
                     toolbar: [
@@ -761,8 +810,112 @@ export default {
         }
     },
     methods: {
-        sendMessage: function() {
-            alert(this.message)
+        mergeAudioStreams: function (desktopStream, voiceStream) {
+            const context = new AudioContext();
+            const destination = context.createMediaStreamDestination();
+            let hasDesktop = false;
+            let hasVoice = false;
+            if (desktopStream && desktopStream.getAudioTracks().length > 0) {
+            // If you don't want to share Audio from the desktop it should still work with just the voice.
+            const source1 = context.createMediaStreamSource(desktopStream);
+            const desktopGain = context.createGain();
+            desktopGain.gain.value = 0.7;
+            source1.connect(desktopGain).connect(destination);
+            hasDesktop = true;
+            }
+            
+            if (voiceStream && voiceStream.getAudioTracks().length > 0) {
+            const source2 = context.createMediaStreamSource(voiceStream);
+            const voiceGain = context.createGain();
+            voiceGain.gain.value = 0.7;
+            source2.connect(voiceGain).connect(destination);
+            hasVoice = true;
+            }
+            
+            return (hasDesktop || hasVoice) ? destination.stream.getAudioTracks() : [];
+        },
+        handleRecording: async function() {
+            if(!this.recording) {
+                if ('MediaRecorder' in window) {
+                    try {
+                        
+                        var desktopStream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio: true });
+                        var voiceStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                        this.recording = true;
+
+                        desktopStream.getVideoTracks()[0].onended = function() { // Click on browser UI stop sharing button
+                            this.recording = false;
+                        }.bind(this);
+
+                        const tracks = [
+                        ...desktopStream.getVideoTracks(), 
+                        ...this.mergeAudioStreams(desktopStream, voiceStream)
+                        ];
+                        var stream = new MediaStream(tracks);
+                        this.recorder = new MediaRecorder(stream, {mimeType: 'video/webm; codecs=vp8,opus'});
+                        this.recorder.addEventListener('dataavailable', event => {
+                            if (typeof event.data === 'undefined') return;
+                            if (event.data.size === 0) return;
+                            this.recordingBlobs = [...this.recordingBlobs, event.data];
+                        });
+                        this.recorder.start();
+                        } catch {
+                            this.recording = false;
+                            alert(
+                                'You denied access to the microphone so this demo will not work.'
+                            );
+                        }
+                } 
+                else 
+                {
+                    this.recording = false;
+                    alert(
+                        "Sorry, your browser doesn't support the MediaRecorder API, so this demo will not work."
+                    );
+                }
+            } else {
+                this.recorder.addEventListener('stop', () => {
+                    var recording = new Blob(this.recordingBlobs, {
+                    type: 'video/webm; codecs=vp8,opus'
+                    });
+                    this.recordingBlobs = [];
+                    this.recording = false;
+                    var blobUrl = URL.createObjectURL(recording);
+                    const anchor = document.createElement('a');
+                    anchor.setAttribute('href', blobUrl);
+                    const now = new Date();
+                    anchor.innerHTML = '<span>Download</span>';
+                    anchor.setAttribute(
+                    'download',
+                    `recording-${now.getFullYear()}-${(now.getMonth() + 1)
+                        .toString()
+                        .padStart(2, '0')}-${now
+                        .getDay()
+                        .toString()
+                        .padStart(2, '0')}--${now
+                        .getHours()
+                        .toString()
+                        .padStart(2, '0')}-${now
+                        .getMinutes()
+                        .toString()
+                        .padStart(2, '0')}-${now
+                        .getSeconds()
+                        .toString()
+                        .padStart(2, '0')}.webm`
+                    );
+                    anchor.id = 'download'
+                    anchor.style.display = 'none';
+                    document.body.appendChild(anchor);
+                    $('#download span').click();
+                    document.body.removeChild(anchor);
+
+                });
+                this.recorder.stop();
+            }
+        },
+        sendMessage: async function() {
+            await sendMessage(this.name, this.message , this.sessionId);
+            this.message = ''
         },
         openChat: function() {
             this.messageDrawer = true;

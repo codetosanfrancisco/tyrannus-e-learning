@@ -32,7 +32,7 @@
                 </v-btn>
                 </v-card-actions>
             </v-card>
-        </v-dialog>
+            </v-dialog>
          <v-data-table
             :headers="headers"
             :items="sessions"
@@ -56,13 +56,6 @@
             </v-toolbar>
             </template>
             <template v-slot:item.action="{ item }">
-            <v-icon
-                small
-                class="mr-2"
-                @click="editSession(item.index)"
-            >
-                edit
-            </v-icon>
             <v-icon
                 small
                 class="mr-2"
@@ -146,11 +139,6 @@ export default {
         }
     },
     methods: {
-        editSession(index) {
-            index--;
-            const session = this.sessions[index];
-            this.$router.push({ name: 'EditSession', params: {id: session._id }})
-        },
         editItem(item) {
             window.console.log(item.index)
         },
@@ -193,10 +181,7 @@ export default {
                 }
                 window.console.log("OBJ", obj)
                 authStore.commit('logInSession', obj);
-                this.$router.push({ name: 'Live', params: {id: data._id }});
-                return;
-            } else if(data.students.filter(student => student.email == authStore.state.user.email)[0]) {
-                window.console.log( data.students.filter(student => student.email == authStore.state.user.email)[0]);
+            } else {
                 res = data.students.filter(student => student.email == authStore.state.user.email)[0];
                 window.console.log("RES",res)
                 const obj = {
@@ -207,10 +192,8 @@ export default {
                 }
                 window.console.log("OBJ", obj)
                 authStore.commit('logInSession', obj);
-                this.$router.push({ name: 'Live', params: {id: data._id }})
-                return;
             }
-            alert("You are not added to this class"); 
+            this.$router.push({ name: 'Live', params: {id: data._id }})
         },
         handleScroll(e) {
             window.console.log(this.scrolled, window.scrollY, e)
