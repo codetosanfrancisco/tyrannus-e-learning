@@ -531,10 +531,6 @@ export default {
             this.role = authStore.state.session.role;
             this.zerolecturer = lecturers.filter(lecturer => lecturer.role == "lecturer-0")[0];
             const socket = await io.connect(`${process.env.NODE_ENV == 'production' ? process.env.VUE_APP_VANILLA_SERVER : "http://localhost:8081/"}live`); 
-            const { data: { messages } } = await getMessages(this.sessionId);
-            window.console.log("CHAT",messages);
-            this.messages = messages;
-            $('#chatbox').scrollTop(1000000);
             // Once connect, emit sessionId to join the matching room
             socket.on('connect', function() {
                 socket.emit('room', self.sessionId);
@@ -547,6 +543,11 @@ export default {
                     })
                 })
             });
+
+            const { data: { messages } } = await getMessages(this.sessionId);
+            window.console.log("CHAT",messages);
+            this.messages = messages;
+            $('#chatbox').scrollTop(1000000);
 
              // Get All Existing tabs
             const { data: { session }} = await getAllTabs(this.sessionId);
@@ -838,13 +839,13 @@ export default {
             if(!this.recording) {
                 if ('MediaRecorder' in window) {
                     try {
-                        
                         var desktopStream = await navigator.mediaDevices.getDisplayMedia({ video:true, audio: true });
                         var voiceStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
                         this.recording = true;
 
                         desktopStream.getVideoTracks()[0].onended = function() { // Click on browser UI stop sharing button
                             this.recording = false;
+                            this.recorder.stop();
                         }.bind(this);
 
                         const tracks = [
@@ -853,6 +854,41 @@ export default {
                         ];
                         var stream = new MediaStream(tracks);
                         this.recorder = new MediaRecorder(stream, {mimeType: 'video/webm; codecs=vp8,opus'});
+                        this.recorder.addEventListener('stop', () => {
+                            var recording = new Blob(this.recordingBlobs, {
+                            type: 'video/webm; codecs=vp8,opus'
+                            });
+                            this.recordingBlobs = [];
+                            this.recording = false;
+                            var blobUrl = URL.createObjectURL(recording);
+                            const anchor = document.createElement('a');
+                            anchor.setAttribute('href', blobUrl);
+                            const now = new Date();
+                            anchor.innerHTML = '<span>Download</span>';
+                            anchor.setAttribute(
+                            'download',
+                            `recording-${now.getFullYear()}-${(now.getMonth() + 1)
+                                .toString()
+                                .padStart(2, '0')}-${now
+                                .getDay()
+                                .toString()
+                                .padStart(2, '0')}--${now
+                                .getHours()
+                                .toString()
+                                .padStart(2, '0')}-${now
+                                .getMinutes()
+                                .toString()
+                                .padStart(2, '0')}-${now
+                                .getSeconds()
+                                .toString()
+                                .padStart(2, '0')}.webm`
+                            );
+                            anchor.id = 'download'
+                            anchor.style.display = 'none';
+                            document.body.appendChild(anchor);
+                            $('#download span').click();
+                            document.body.removeChild(anchor);
+                        });
                         this.recorder.addEventListener('dataavailable', event => {
                             if (typeof event.data === 'undefined') return;
                             if (event.data.size === 0) return;
@@ -874,42 +910,6 @@ export default {
                     );
                 }
             } else {
-                this.recorder.addEventListener('stop', () => {
-                    var recording = new Blob(this.recordingBlobs, {
-                    type: 'video/webm; codecs=vp8,opus'
-                    });
-                    this.recordingBlobs = [];
-                    this.recording = false;
-                    var blobUrl = URL.createObjectURL(recording);
-                    const anchor = document.createElement('a');
-                    anchor.setAttribute('href', blobUrl);
-                    const now = new Date();
-                    anchor.innerHTML = '<span>Download</span>';
-                    anchor.setAttribute(
-                    'download',
-                    `recording-${now.getFullYear()}-${(now.getMonth() + 1)
-                        .toString()
-                        .padStart(2, '0')}-${now
-                        .getDay()
-                        .toString()
-                        .padStart(2, '0')}--${now
-                        .getHours()
-                        .toString()
-                        .padStart(2, '0')}-${now
-                        .getMinutes()
-                        .toString()
-                        .padStart(2, '0')}-${now
-                        .getSeconds()
-                        .toString()
-                        .padStart(2, '0')}.webm`
-                    );
-                    anchor.id = 'download'
-                    anchor.style.display = 'none';
-                    document.body.appendChild(anchor);
-                    $('#download span').click();
-                    document.body.removeChild(anchor);
-
-                });
                 this.recorder.stop();
             }
         },
@@ -1058,20 +1058,28 @@ export default {
         },
         submitMedia: async function() {
             var self = this;
-            const formData = new FormData();
-            self.files = [ ...self.files, { 'display_name': 'Loading...' } ]
-            const fileExtension = this.media.name.split('.').pop();
-            formData.append('pdf', this.media);
-            formData.append('extension', fileExtension);
-            const { data: { file } } = await submitPdf(this.sessionId, formData);
-            const files = [ ...self.files ];
-            files[self.files.length - 1] = file;
-            self.files = files.map(function(file, index){
-                return {
-                    ...file,
-                    index: index + 1
-                }
-            });           
+            try {
+                const formData = new FormData();
+                self.files = [ ...self.files, { 'display_name': 'Loading...' } ]
+                const fileExtension = this.media.name.split('.').pop();
+                formData.append('pdf', this.media);
+                formData.append('extension', fileExtension);
+                const { data: { file } } = await submitPdf(this.sessionId, formData);
+                const files = [ ...self.files ];
+                files[self.files.length - 1] = file;
+                self.files = files.map(function(file, index){
+                    return {
+                        ...file,
+                        index: index + 1
+                    }
+                });      
+            } catch(e) {
+                self.files = self.files.filter(function(file) {
+                    return file.display_name != 'Loading...';
+                });
+                alert("Error Uploading file.")
+            }
+                 
         },
         getTab: function(nameOfTab, option) {
             return {
