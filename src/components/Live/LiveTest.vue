@@ -898,7 +898,7 @@ export default {
                         } catch {
                             this.recording = false;
                             alert(
-                                'You denied access to the microphone so this demo will not work.'
+                                'Denied access!'
                             );
                         }
                 } 
@@ -921,7 +921,7 @@ export default {
             this.messageDrawer = true;
         },
         submitVideoLink: async function (index) {
-            var video = this.workSpaceTabs[index].youtubeUrl.split('v=')[1];
+            var video = this.workSpaceTabs[index].youtubeUrl.split('/')[3];
             window.console.log(video);
             await sendVideoLink(this.sessionId, this.email, video, index);
 
@@ -937,6 +937,8 @@ export default {
             tabs[index] = tab;
 
             this.workSpaceTabs = tabs;
+
+            this.$refs[`youtube-${index}`][0].player.playerVars = {rel: 0, showinfo: 0, ecver: 2};
 
             this.$forceUpdate();
         },
@@ -1064,9 +1066,7 @@ export default {
                 const fileExtension = this.media.name.split('.').pop();
                 formData.append('pdf', this.media);
                 formData.append('extension', fileExtension);
-                const { data: { file } } = await submitPdf(this.sessionId, formData);
-                const files = [ ...self.files ];
-                files[self.files.length - 1] = file;
+                const { data: { files } } = await submitPdf(this.sessionId, formData);
                 self.files = files.map(function(file, index){
                     return {
                         ...file,
@@ -1183,6 +1183,9 @@ export default {
             sendVideoEvent(this.sessionId, this.email, 'pause', index)
         },
         showEndSessionModal () {
+            if(this.recording) {
+                this.handleRecording();
+            }
             this.showEndSession = true;
         },
         hideEndSessionModal () {
